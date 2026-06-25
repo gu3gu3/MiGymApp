@@ -15,6 +15,9 @@ export async function getGyms() {
   const gyms = await prisma.gym.findMany({
     include: {
       platformPlan: true,
+      staff: {
+        where: { role: 'GYM_ADMIN' }
+      },
       _count: {
         select: {
           subscriptions: true,
@@ -27,7 +30,13 @@ export async function getGyms() {
     orderBy: { createdAt: 'desc' }
   })
 
-  return gyms
+  return gyms.map(gym => ({
+    ...gym,
+    platformPlan: gym.platformPlan ? {
+      ...gym.platformPlan,
+      priceUsd: Number(gym.platformPlan.priceUsd)
+    } : null
+  }))
 }
 
 export async function deleteGymCascade(gymId: string) {

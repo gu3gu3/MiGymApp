@@ -97,6 +97,7 @@ model Gym {
   currency       String?        @default("NIO")
   exchangeRate   Float?         @default(1.0)
   isLocked       Boolean        @default(false) // SaaS Lock
+  posPlan        PosPlan        @default(KIOSKO)
   createdAt      DateTime       @default(now())
   
   // Relaciones
@@ -112,6 +113,12 @@ model Gym {
   teamColor      String?        // Color corporativo para los matches
   competitions   GymInCompetition[]
   platformPlan   PlatformPlan?  @relation(fields: [platformPlanId], references: [id])
+}
+
+enum PosPlan {
+  KIOSKO
+  TIENDITA
+  SMART_BAR
 }
 
 // ==========================================
@@ -180,6 +187,7 @@ model Product {
   gymId       String
   name        String
   price       Decimal  @db.Decimal(10, 2)
+  costPrice   Decimal? @db.Decimal(10, 2)
   stock       Int      @default(0)
   minStock    Int      @default(5) // Alerta visual en la UI de stock bajo
   photoUrl    String?

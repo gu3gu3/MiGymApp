@@ -25,6 +25,10 @@ export async function updateGymAction(formData: FormData) {
     const department = formData.get('department') as string
     const latitude = formData.get('latitude')
     const longitude = formData.get('longitude')
+    
+    // Owner Fields
+    const ownerName = formData.get('ownerName') as string
+    const ownerPhone = formData.get('ownerPhone') as string
 
     await prisma.gym.update({
       where: { id: gymId },
@@ -42,6 +46,21 @@ export async function updateGymAction(formData: FormData) {
         ...(longitude && { longitude: parseFloat(longitude as string) })
       }
     })
+
+    // Update Owner Info
+    const owner = await prisma.user.findFirst({
+      where: { gymId: gymId, role: 'GYM_ADMIN' }
+    })
+
+    if (owner && (ownerName || ownerPhone !== undefined)) {
+      await prisma.user.update({
+        where: { id: owner.id },
+        data: {
+          ...(ownerName && { name: ownerName }),
+          ...(ownerPhone !== undefined && { phone: ownerPhone })
+        }
+      })
+    }
 
     return { success: true }
   } catch (error) {

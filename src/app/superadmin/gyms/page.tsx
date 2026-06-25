@@ -17,10 +17,16 @@ export default async function GymsPage() {
   let paidGyms = 0
 
   gyms.forEach(gym => {
-    if (gym.platformPlan && gym.platformPlan.priceUsd.toNumber() > 0) {
-      totalMRR += gym.platformPlan.priceUsd.toNumber()
+    let gymTotal = 0
+    if (gym.platformPlan && gym.platformPlan.priceUsd > 0) {
+      gymTotal += gym.platformPlan.priceUsd
       paidGyms++
     }
+    
+    if (gym.posPlan === 'TIENDITA') gymTotal += 15
+    if (gym.posPlan === 'SMART_BAR') gymTotal += 30
+
+    totalMRR += gymTotal
   })
 
   const totalAthletes = await prisma.user.count({

@@ -1,6 +1,7 @@
 'use server'
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { auth } from "@/auth"
 
 export async function getCompetitions() {
   const comps = await prisma.competition.findMany({
@@ -70,7 +71,11 @@ export async function createCompetition(data: FormData) {
 
 export async function joinCompetition(competitionId: string) {
   try {
-    const gym = await prisma.gym.findFirst()
+    const session = await auth()
+    const currentGymId = (session?.user as any)?.gymId
+    if (!currentGymId) throw new Error("No tienes gym")
+
+    const gym = await prisma.gym.findUnique({ where: { id: currentGymId } })
     if (!gym) throw new Error("Gym not found")
     
     await prisma.gymInCompetition.create({
@@ -89,11 +94,16 @@ export async function joinCompetition(competitionId: string) {
 }
 
 export async function getTopAthletes(gymId?: string) {
-  const targetGym = gymId || (await prisma.gym.findFirst())?.id
+  let targetGym = gymId
+  if (!targetGym) {
+    const session = await auth()
+    targetGym = (session?.user as any)?.gymId
+  }
   if (!targetGym) return []
 
   const users = await prisma.user.findMany({
     where: {
+      role: 'ATHLETE',
       subscriptions: { some: { gymId: targetGym, status: 'ACTIVE' } }
     },
     orderBy: { xp: 'desc' },
@@ -111,12 +121,13 @@ export async function getTopAthletes(gymId?: string) {
 
 export async function findLocalGyms(searchTerm: string) {
   if (!searchTerm) return []
-  const currentGym = await prisma.gym.findFirst()
-  if (!currentGym) return []
+  const session = await auth()
+  const currentGymId = (session?.user as any)?.gymId
+  if (!currentGymId) return []
   
   return await prisma.gym.findMany({
     where: {
-      id: { not: currentGym.id },
+      id: { not: currentGymId },
       name: { contains: searchTerm, mode: 'insensitive' }
     },
     take: 5
@@ -125,7 +136,11 @@ export async function findLocalGyms(searchTerm: string) {
 
 export async function challengeGym(targetGymId: string) {
   try {
-    const currentGym = await prisma.gym.findFirst()
+    const session = await auth()
+    const currentGymId = (session?.user as any)?.gymId
+    if (!currentGymId) throw new Error("No tienes gym")
+
+    const currentGym = await prisma.gym.findUnique({ where: { id: currentGymId } })
     if (!currentGym) throw new Error("Gym not found")
     
     // Create a 1v1 competition

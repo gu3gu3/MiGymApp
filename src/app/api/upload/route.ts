@@ -14,6 +14,7 @@ export async function POST(req: Request) {
 
     const formData = await req.formData()
     const file = formData.get('file') as File
+    const gymSlug = formData.get('gymSlug') as string || 'general'
     
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
       })
 
       const bucket = storage.bucket(process.env.GCS_BUCKET_NAME)
-      const gcsFile = bucket.file(`gym-assets/${filename}`)
+      const gcsFile = bucket.file(`gym-assets/${gymSlug}/products/${filename}`)
       
       await gcsFile.save(buffer, {
         metadata: { contentType: file.type }
@@ -46,11 +47,11 @@ export async function POST(req: Request) {
       // Hacerlo público si el bucket no lo es por defecto (Opcional, depende de tu config de bucket)
       // await gcsFile.makePublic();
 
-      const publicUrl = `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/gym-assets/${filename}`
+      const publicUrl = `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/gym-assets/${gymSlug}/products/${filename}`
       return NextResponse.json({ url: publicUrl })
     } else {
       // Fallback Local (Desarrollo)
-      const uploadDir = join(process.cwd(), 'public', 'uploads')
+      const uploadDir = join(process.cwd(), 'public', 'uploads', gymSlug, 'products')
       
       if (!existsSync(uploadDir)) {
         await mkdir(uploadDir, { recursive: true })
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
       const filepath = join(uploadDir, filename)
       await writeFile(filepath, buffer)
       
-      return NextResponse.json({ url: `/uploads/${filename}` })
+      return NextResponse.json({ url: `/uploads/${gymSlug}/products/${filename}` })
     }
 
   } catch (error) {

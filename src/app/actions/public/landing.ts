@@ -27,6 +27,8 @@ export async function registerGymNode(data: FormData) {
     const email = data.get('email') as string
     const password = data.get('password') as string 
     const address = data.get('address') as string
+    const ownerName = data.get('ownerName') as string
+    const phone = data.get('phone') as string
 
     // 2. Assign default Platform Plan (Freemium)
     const freePlan = await prisma.platformPlan.findFirst({
@@ -48,7 +50,8 @@ export async function registerGymNode(data: FormData) {
       data: {
         email,
         password: hashedPassword,
-        name: gymName + ' Admin',
+        name: ownerName || (gymName + ' Admin'),
+        phone: phone || null,
         role: 'GYM_ADMIN',
         gymId: gym.id
       }

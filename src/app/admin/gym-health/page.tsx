@@ -10,14 +10,25 @@ export default async function GymHealthPage() {
     return <div className="p-8 text-white">No tienes un gimnasio asignado.</div>
   }
 
+  const gym = await prisma.gym.findUnique({
+    where: { id: gymId },
+    select: { currency: true }
+  })
+  const currency = gym?.currency || 'USD'
+
+  const oneYearAgo = new Date()
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+
   const athletes = await prisma.user.findMany({
     where: { role: 'ATHLETE', subscriptions: { some: { gymId: gymId } } },
     include: {
       subscriptions: {
-        where: { gymId: gymId },
+        where: { 
+          gymId: gymId,
+          startDate: { gte: oneYearAgo }
+        },
         include: { plan: true },
-        orderBy: { startDate: 'desc' },
-        take: 1
+        orderBy: { startDate: 'desc' }
       },
       checkIns: {
         where: { gymId: gymId },
@@ -28,5 +39,5 @@ export default async function GymHealthPage() {
     orderBy: { createdAt: 'desc' }
   })
 
-  return <GymHealthClient athletes={athletes} />
+  return <GymHealthClient athletes={athletes} currency={currency} />
 }

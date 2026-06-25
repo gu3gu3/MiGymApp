@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 
-export async function updateGymSubscription(gymId: string, planId: string, isLocked: boolean) {
+import { PosPlan } from '@prisma/client'
+
+export async function updateGymSubscription(gymId: string, planId: string, isLocked: boolean, posPlan?: PosPlan) {
   const session = await auth()
   const role = (session?.user as any)?.role
 
@@ -13,12 +15,17 @@ export async function updateGymSubscription(gymId: string, planId: string, isLoc
   }
 
   try {
+    const dataToUpdate: any = {
+      platformPlanId: planId,
+      isLocked: isLocked
+    }
+    if (posPlan) {
+      dataToUpdate.posPlan = posPlan
+    }
+
     await prisma.gym.update({
       where: { id: gymId },
-      data: { 
-        platformPlanId: planId,
-        isLocked: isLocked
-      }
+      data: dataToUpdate
     })
     
     revalidatePath('/superadmin/gyms')

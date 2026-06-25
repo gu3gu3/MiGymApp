@@ -2,8 +2,9 @@
 
 import { useState, useRef } from 'react'
 import { importProductsCSV, ProductImportDTO } from '@/app/actions/admin/inventory'
-import { Download, Upload, AlertCircle, Package, Image as ImageIcon } from 'lucide-react'
+import { Download, Upload, AlertCircle, Package, Image as ImageIcon, Plus, DollarSign, Trophy, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { CreateProductModal } from './CreateProductModal'
 
 type ProductData = {
   id: string
@@ -11,16 +12,25 @@ type ProductData = {
   price: number
   stock: number
   minStock: number
+  costPrice: number | null
   photoUrl: string | null
 }
 
-export function InventoryManager({ initialProducts }: { initialProducts: ProductData[] }) {
+export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug = 'general', currency = 'NIO', exchangeRate = 1, salesMetrics = { today: 0, week: 0, month: 0 } }: { initialProducts: ProductData[], posPlan: string, maxLimit: number, gymSlug?: string, currency?: string, exchangeRate?: number, salesMetrics?: { today: number, week: number, month: number } }) {
   const [loading, setLoading] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Opcional: Toggle para ver en NIO si se asume USD
-  const [showNio, setShowNio] = useState(false)
-  const exchangeRate = 36.62 // Tasa de ejemplo
+  // Toggle para ver en USD si la moneda local es diferente
+  const [showUsd, setShowUsd] = useState(false)
+  const isLocalCurrency = currency !== 'USD'
+  const symbol = isLocalCurrency ? (currency === 'NIO' ? 'C$' : currency) : '$'
+  
+  const getDisplayPrice = (val: number) => {
+    if (!isLocalCurrency) return `$${val.toFixed(2)}`
+    if (showUsd && exchangeRate > 0) return `$${(val / exchangeRate).toFixed(2)}`
+    return `${symbol} ${val.toFixed(2)}`
+  }
 
   const handleDownloadTemplate = () => {
     const csvContent = "data:text/csv;charset=utf-8,Nombre,Precio,Stock,StockMinimo\nEjemplo Producto,19.99,10,2"
@@ -79,6 +89,82 @@ export function InventoryManager({ initialProducts }: { initialProducts: Product
 
   return (
     <div className="space-y-6">
+      <CreateProductModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        gymSlug={gymSlug}
+      />
+
+      {/* Sales Performance Cards */}
+      <h2 className="text-lg font-bold text-slate-300 px-1 mt-8">Rendimiento Real de Ventas</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-cyan-950 to-slate-900 border border-cyan-900/50 rounded-2xl p-6 shadow-[0_0_20px_rgba(6,182,212,0.1)] flex flex-col justify-center">
+          <div className="flex items-center gap-3 text-cyan-400 mb-2">
+            <TrendingUp className="w-5 h-5" />
+            <h3 className="font-bold text-sm uppercase tracking-wider">Ventas de Hoy</h3>
+          </div>
+          <p className="text-4xl font-black text-white">
+            {getDisplayPrice(salesMetrics.today)}
+          </p>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-950 to-slate-900 border border-emerald-900/50 rounded-2xl p-6 shadow-[0_0_20px_rgba(16,185,129,0.1)] flex flex-col justify-center">
+          <div className="flex items-center gap-3 text-emerald-400 mb-2">
+            <DollarSign className="w-5 h-5" />
+            <h3 className="font-bold text-sm uppercase tracking-wider">Ventas de la Semana</h3>
+          </div>
+          <p className="text-4xl font-black text-white">
+            {getDisplayPrice(salesMetrics.week)}
+          </p>
+        </div>
+        <div className="bg-gradient-to-br from-purple-950 to-slate-900 border border-purple-900/50 rounded-2xl p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)] flex flex-col justify-center relative overflow-hidden">
+          <div className="absolute -right-4 -bottom-4 opacity-5">
+            <Trophy className="w-32 h-32" />
+          </div>
+          <div className="flex items-center gap-3 text-purple-400 mb-2 relative z-10">
+            <Trophy className="w-5 h-5" />
+            <h3 className="font-bold text-sm uppercase tracking-wider">Ventas del Mes</h3>
+          </div>
+          <p className="text-4xl font-black text-white relative z-10">
+            {getDisplayPrice(salesMetrics.month)}
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Cards (Inventario) */}
+      <h2 className="text-lg font-bold text-slate-300 px-1 mt-8">Proyección de Inventario</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center">
+          <div className="flex items-center gap-3 text-slate-400 mb-2">
+            <Package className="w-5 h-5 text-emerald-400" />
+            <h3 className="font-bold text-sm uppercase tracking-wider">Valor en Inventario</h3>
+          </div>
+          <p className="text-3xl font-black text-white">
+            {getDisplayPrice(initialProducts.reduce((acc, p) => acc + (p.price * p.stock), 0))}
+          </p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center">
+          <div className="flex items-center gap-3 text-slate-400 mb-2">
+            <DollarSign className="w-5 h-5 text-cyan-400" />
+            <h3 className="font-bold text-sm uppercase tracking-wider">Costo Estimado</h3>
+          </div>
+          <p className="text-3xl font-black text-white">
+            {getDisplayPrice(initialProducts.reduce((acc, p) => acc + ((p.costPrice || 0) * p.stock), 0))}
+          </p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center relative overflow-hidden">
+          <div className="absolute -right-4 -bottom-4 opacity-5">
+            <Trophy className="w-32 h-32" />
+          </div>
+          <div className="flex items-center gap-3 text-slate-400 mb-2 relative z-10">
+            <TrendingUp className="w-5 h-5 text-purple-400" />
+            <h3 className="font-bold text-sm uppercase tracking-wider">Ganancia Bruta (Proyectada)</h3>
+          </div>
+          <p className="text-3xl font-black text-purple-400 relative z-10">
+            {getDisplayPrice(initialProducts.reduce((acc, p) => acc + ((p.price - (p.costPrice || p.price)) * p.stock), 0))}
+          </p>
+        </div>
+      </div>
+
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
         <div>
@@ -88,31 +174,49 @@ export function InventoryManager({ initialProducts }: { initialProducts: Product
           <p className="text-sm text-slate-400 mt-1 max-w-xl">
             Sube tu inventario masivamente usando nuestro template CSV.
           </p>
+          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-800 rounded text-xs font-semibold text-slate-300">
+            <span>Productos en catálogo: <span className={initialProducts.length >= maxLimit ? 'text-red-400' : 'text-emerald-400'}>{initialProducts.length} / {maxLimit}</span></span>
+            <span className="text-slate-600">|</span>
+            <span className="text-purple-400 uppercase tracking-wider">{posPlan} PLAN</span>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={handleDownloadTemplate}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors text-sm"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95 text-sm"
           >
-            <Download className="w-4 h-4" /> Template CSV
+            <Plus className="w-5 h-5" /> Crear Producto
           </button>
           
-          <div className="relative">
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              ref={fileInputRef}
-              className="hidden"
-              id="csv-upload"
-              disabled={loading}
-            />
-            <label
-              htmlFor="csv-upload"
-              className={`inline-flex items-center gap-2 px-4 py-2 ${loading ? 'bg-emerald-600/50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 cursor-pointer'} text-white rounded-lg font-medium transition-colors text-sm`}
+          <div className="h-8 w-px bg-slate-700 hidden sm:block mx-1"></div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleDownloadTemplate}
+              className="inline-flex items-center justify-center w-10 h-10 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors border border-slate-700"
+              title="Descargar Template CSV"
             >
-              <Upload className="w-4 h-4" /> {loading ? 'Importando...' : 'Importar CSV'}
-            </label>
+              <Download className="w-4 h-4" />
+            </button>
+            
+            <div className="relative">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                ref={fileInputRef}
+                className="hidden"
+                id="csv-upload"
+                disabled={loading}
+              />
+                <label
+                htmlFor="csv-upload"
+                title="Importar CSV"
+                className={`inline-flex items-center justify-center w-10 h-10 ${loading ? 'bg-emerald-600/50 cursor-not-allowed' : 'bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-500/30 cursor-pointer'} rounded-xl transition-colors`}
+              >
+                <Upload className="w-4 h-4" />
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -130,19 +234,22 @@ export function InventoryManager({ initialProducts }: { initialProducts: Product
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
           <h3 className="font-bold text-white">Catálogo de Productos</h3>
-          <button 
-            onClick={() => setShowNio(!showNio)}
-            className="text-xs px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
-          >
-            {showNio ? 'Mostrando en NIO (Aprox)' : 'Mostrar conversión a NIO'}
-          </button>
+          {isLocalCurrency && (
+            <button 
+              onClick={() => setShowUsd(!showUsd)}
+              className="text-xs px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors border border-slate-700"
+            >
+              {showUsd ? `Mostrando en USD (Tasa: ${exchangeRate})` : 'Convertir a USD'}
+            </button>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-wider">
               <tr>
                 <th className="p-4 font-semibold">Producto</th>
-                <th className="p-4 font-semibold">Precio</th>
+                <th className="p-4 font-semibold">Costo / Venta</th>
+                <th className="p-4 font-semibold">Ganancia</th>
                 <th className="p-4 font-semibold">Stock Actual</th>
                 <th className="p-4 font-semibold">Estado</th>
               </tr>
@@ -171,11 +278,19 @@ export function InventoryManager({ initialProducts }: { initialProducts: Product
                         <span className="font-medium text-white">{p.name}</span>
                       </div>
                     </td>
-                    <td className="p-4 text-slate-300 font-mono text-sm">
-                      {showNio ? (
-                        <span>C$ {(p.price * exchangeRate).toFixed(2)}</span>
+                    <td className="p-4 text-slate-300 text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-slate-500 text-xs line-through">{p.costPrice ? getDisplayPrice(p.costPrice) : '0.00'}</span>
+                        <span className="font-bold text-emerald-400 text-base">{getDisplayPrice(p.price)}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      {p.costPrice ? (
+                        <span className="text-purple-400 font-bold bg-purple-500/10 px-2 py-1 rounded-md text-xs border border-purple-500/20">
+                          +{getDisplayPrice(p.price - p.costPrice)}
+                        </span>
                       ) : (
-                        <span>$ {p.price.toFixed(2)}</span>
+                        <span className="text-slate-600 text-xs">-</span>
                       )}
                     </td>
                     <td className="p-4 text-slate-300 font-mono text-sm">

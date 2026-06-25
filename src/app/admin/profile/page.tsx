@@ -18,5 +18,5 @@ export default async function GymProfilePage() {
     where: { gymId: gymId, role: 'GYM_ADMIN' }
   })
 
-  return <GymProfileClient initialGym={gym} ownerName={owner?.name || 'Desconocido'} />
+  return <GymProfileClient initialGym={gym} ownerName={owner?.name || 'Desconocido'} ownerPhone={owner?.phone || ''} />
 }

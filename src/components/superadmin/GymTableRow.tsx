@@ -12,14 +12,16 @@ type GymData = {
   slug: string
   isLocked: boolean
   platformPlanId: string | null
+  posPlan: 'KIOSKO' | 'TIENDITA' | 'SMART_BAR'
   createdAt: Date
-  platformPlan: { id: string, name: string } | null
+  platformPlan: { id: string, name: string, priceUsd: any } | null
   _count: {
     subscriptions: number
     sales: number
     plans: number
     products: number
   }
+  staff?: { name: string, phone: string | null }[]
 }
 
 export function GymTableRow({ gym, allPlans }: { gym: GymData, allPlans: any[] }) {
@@ -29,6 +31,7 @@ export function GymTableRow({ gym, allPlans }: { gym: GymData, allPlans: any[] }
   // Local state for optimism
   const [locked, setLocked] = useState(gym.isLocked)
   const [planId, setPlanId] = useState(gym.platformPlanId || allPlans[0]?.id)
+  const [posPlan, setPosPlan] = useState(gym.posPlan)
 
   const handleDelete = async () => {
     const confirmName = prompt(
@@ -55,12 +58,13 @@ export function GymTableRow({ gym, allPlans }: { gym: GymData, allPlans: any[] }
     }
   }
 
-  const handleUpdate = async (newPlanId: string, newLocked: boolean) => {
+  const handleUpdate = async (newPlanId: string, newLocked: boolean, newPosPlan: any) => {
     setIsUpdating(true)
     setPlanId(newPlanId)
     setLocked(newLocked)
+    setPosPlan(newPosPlan)
     try {
-      const res = await updateGymSubscription(gym.id, newPlanId, newLocked)
+      const res = await updateGymSubscription(gym.id, newPlanId, newLocked, newPosPlan)
       if (res.success) {
         toast.success('Estado actualizado')
       } else {
@@ -68,15 +72,21 @@ export function GymTableRow({ gym, allPlans }: { gym: GymData, allPlans: any[] }
         // Revert on fail
         setPlanId(gym.platformPlanId || allPlans[0]?.id)
         setLocked(gym.isLocked)
+        setPosPlan(gym.posPlan)
       }
     } catch (error) {
       toast.error('Error de red')
       setPlanId(gym.platformPlanId || allPlans[0]?.id)
       setLocked(gym.isLocked)
+      setPosPlan(gym.posPlan)
     } finally {
       setIsUpdating(false)
     }
   }
+
+  const basePrice = gym.platformPlan?.priceUsd || 0
+  const posPrice = posPlan === 'TIENDITA' ? 15 : posPlan === 'SMART_BAR' ? 30 : 0
+  const totalPrice = basePrice + posPrice
 
   return (
     <tr className="border-b border-slate-800 hover:bg-slate-900/50 transition-colors">
@@ -85,24 +95,44 @@ export function GymTableRow({ gym, allPlans }: { gym: GymData, allPlans: any[] }
           {locked && <Lock className="w-3 h-3 text-red-500" />}
           {gym.name}
         </p>
-        <p className="text-xs text-slate-500 font-mono mt-1">{gym.slug}</p>
-        <p className="text-xs text-slate-600 mt-1">Suscrito: {gym.createdAt.toLocaleDateString()}</p>
+        <p className="text-[10px] text-slate-500 font-mono mt-1 mb-2">{gym.slug}</p>
+        {gym.staff && gym.staff.length > 0 && (
+          <div className="bg-slate-950/50 rounded p-2 mb-2 border border-slate-800">
+            <p className="text-xs font-bold text-slate-300">{gym.staff[0].name}</p>
+            {gym.staff[0].phone && <p className="text-[10px] text-cyan-400 font-mono">{gym.staff[0].phone}</p>}
+          </div>
+        )}
+        <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-widest font-bold">Suscrito: {gym.createdAt.toLocaleDateString()}</p>
       </td>
       <td className="p-4">
         <div className="flex flex-col gap-2">
-          <select 
-            value={planId}
-            onChange={(e) => handleUpdate(e.target.value, locked)}
-            disabled={isUpdating}
-            className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-cyan-500 w-full max-w-[150px]"
-          >
-            {allPlans.map(plan => (
-              <option key={plan.id} value={plan.id}>{plan.name}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select 
+              value={planId}
+              onChange={(e) => handleUpdate(e.target.value, locked, posPlan)}
+              disabled={isUpdating}
+              className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-cyan-500 w-full max-w-[150px]"
+            >
+              {allPlans.map(plan => (
+                <option key={plan.id} value={plan.id}>{plan.name}</option>
+              ))}
+            </select>
+            <span className="text-xs text-emerald-400 font-bold">${totalPrice}/mo</span>
+          </div>
           
+          <select 
+            value={posPlan}
+            onChange={(e) => handleUpdate(planId, locked, e.target.value)}
+            disabled={isUpdating}
+            className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-purple-500 w-full max-w-[150px]"
+          >
+            <option value="KIOSKO">POS: Kiosko (10 prod) +$0</option>
+            <option value="TIENDITA">POS: Tiendita (30 prod) +$15</option>
+            <option value="SMART_BAR">POS: Smart Bar (100 prod) +$30</option>
+          </select>
+
           <button
-            onClick={() => handleUpdate(planId, !locked)}
+            onClick={() => handleUpdate(planId, !locked, posPlan)}
             disabled={isUpdating}
             className={`inline-flex items-center gap-1.5 px-2 py-1 text-[10px] uppercase font-bold rounded w-fit transition-colors ${
               locked 

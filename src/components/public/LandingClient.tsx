@@ -215,6 +215,17 @@ export function LandingClient({ competitions }: { competitions: any[] }) {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
+                  <label className="block text-sm font-semibold text-slate-400 mb-1">Nombre Completo del Propietario</label>
+                  <input name="ownerName" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Ej. Juan Pérez" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-400 mb-1">Teléfono (Propietario/Gym)</label>
+                  <input name="phone" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="+505 8888 8888" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
                   <label className="block text-sm font-semibold text-slate-400 mb-1">Correo (Admin)</label>
                   <input name="email" type="email" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="admin@gym.com" />
                 </div>

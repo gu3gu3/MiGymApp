@@ -8,7 +8,7 @@ import { updateGymAction } from '@/app/actions/gym/update-gym'
 import { Country, State } from 'country-state-city'
 import { ChangeOwnPasswordForm } from '@/components/shared/ChangeOwnPasswordForm'
 
-export default function GymProfileClient({ initialGym, ownerName }: { initialGym: any, ownerName?: string }) {
+export default function GymProfileClient({ initialGym, ownerName, ownerPhone }: { initialGym: any, ownerName?: string, ownerPhone?: string }) {
   const [formData, setFormData] = useState({
     name: initialGym?.name || '',
     logoUrl: initialGym?.logoUrl || '',
@@ -20,7 +20,9 @@ export default function GymProfileClient({ initialGym, ownerName }: { initialGym
     country: initialGym?.country || 'NI', // ISO2 code
     department: initialGym?.department || '',
     latitude: initialGym?.latitude || '',
-    longitude: initialGym?.longitude || ''
+    longitude: initialGym?.longitude || '',
+    ownerName: ownerName || '',
+    ownerPhone: ownerPhone || ''
   })
   
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -100,6 +102,8 @@ export default function GymProfileClient({ initialGym, ownerName }: { initialGym
     fd.append('department', formData.department)
     if (formData.latitude) fd.append('latitude', formData.latitude.toString())
     if (formData.longitude) fd.append('longitude', formData.longitude.toString())
+    fd.append('ownerName', formData.ownerName)
+    fd.append('ownerPhone', formData.ownerPhone)
     
     const res = await updateGymAction(fd)
     if (res.success) {
@@ -276,9 +280,15 @@ export default function GymProfileClient({ initialGym, ownerName }: { initialGym
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-bold text-slate-400 mb-2">Propietario</label>
-                <input type="text" readOnly value={ownerName || ''} className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-4 py-3 text-slate-500 outline-none font-bold cursor-not-allowed" />
-                <p className="text-xs text-slate-500 mt-1">Usuario GYM_ADMIN</p>
+                <label className="block text-sm font-bold text-slate-400 mb-2">Nombre del Propietario</label>
+                <input type="text" value={formData.ownerName} onChange={e => setFormData({...formData, ownerName: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-cyan-500 outline-none font-bold" />
+                <p className="text-xs text-slate-500 mt-1">Usuario GYM_ADMIN principal</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-400 mb-2">Teléfono del Propietario / Gym</label>
+                <input type="text" value={formData.ownerPhone} onChange={e => setFormData({...formData, ownerPhone: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-cyan-500 outline-none font-bold" />
+                <p className="text-xs text-slate-500 mt-1">Visible para SuperAdmin</p>
               </div>
               
               <div>
