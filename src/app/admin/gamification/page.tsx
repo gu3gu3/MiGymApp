@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Trophy, Medal, Star, Zap, Swords, Play, Calendar, Search, ArrowRight, Gift, Tag } from 'lucide-react'
+import { Trophy, Medal, Star, Zap, Swords, Play, Calendar, Search, ArrowRight, Gift, Tag, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getCompetitions, joinCompetition, getTopAthletes, findLocalGyms, challengeGym } from '@/app/actions/gamification/leaderboard'
 
@@ -230,7 +230,13 @@ export default function GymAdminInbox() {
                    athletes.map((ath, i) => (
                      <div key={ath.id} className="flex items-center gap-3">
                        <div className="w-5 text-center font-bold text-slate-500 text-xs">#{i+1}</div>
-                       <img src={ath.image || ''} className="w-8 h-8 rounded-full border border-slate-700 object-cover" />
+                       <div className="w-8 h-8 rounded-full border border-slate-700 bg-slate-800 flex items-center justify-center overflow-hidden">
+                         {ath.image ? (
+                           <img src={ath.image} className="w-full h-full object-cover" alt={ath.name} />
+                         ) : (
+                           <User className="w-4 h-4 text-slate-500" />
+                         )}
+                       </div>
                        <div className="flex-1 min-w-0">
                          <p className="font-bold text-sm text-white truncate">{ath.name}</p>
                          <p className="text-[10px] text-slate-400 flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-400" /> Nvl {ath.level}</p>
