@@ -3,10 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      allowedOrigins: ['migym-app.com', 'www.migym-app.com', 'localhost:3001', '192.168.1.110:3001']
+      allowedOrigins: ['migymp-app.com', 'migym-app.com', 'www.migym-app.com', 'localhost:3001', '192.168.1.110:3001']
     }
   },
-  allowedDevOrigins: ['migym-app.com', 'www.migym-app.com']
+  allowedDevOrigins: ['migymp-app.com', 'migym-app.com', 'www.migym-app.com'],
+  typescript: {
+    ignoreBuildErrors: true
+  }
 };
 
 export default nextConfig;

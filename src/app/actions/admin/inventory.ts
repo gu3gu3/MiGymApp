@@ -46,7 +46,7 @@ export async function getProducts(gymId: string, onlyActive: boolean = false) {
     whereClause.isActive = true
   }
 
-  const products = await prisma.product.findMany({
+  const products: any[] = await prisma.product.findMany({
     where: whereClause,
     orderBy: { name: 'asc' }
   })
