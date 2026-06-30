@@ -20,7 +20,7 @@ export default async function PosPage() {
   })
   
   const posPlan = gym?.posPlan || 'KIOSKO'
-  const products = await getProducts(user.gymId)
+  const products = await getProducts(user.gymId, true)
 
   return (
     <PosManager 

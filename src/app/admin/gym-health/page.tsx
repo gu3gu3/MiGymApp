@@ -39,5 +39,22 @@ export default async function GymHealthPage() {
     orderBy: { createdAt: 'desc' }
   })
 
-  return <GymHealthClient athletes={athletes} currency={currency} />
+  const expressSales = await prisma.sale.findMany({
+    where: {
+      gymId,
+      createdAt: { gte: oneYearAgo },
+      items: {
+        some: { product: { name: 'Pase Express (1 Día)' } }
+      }
+    }
+  })
+
+  // Convert Decimals to string/number for Client Component
+  const serializedSales = expressSales.map(s => ({
+    id: s.id,
+    createdAt: s.createdAt,
+    total: Number(s.total)
+  }))
+
+  return <GymHealthClient athletes={athletes} currency={currency} expressSales={serializedSales} />
 }

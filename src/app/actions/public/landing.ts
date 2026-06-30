@@ -44,6 +44,16 @@ export async function registerGymNode(data: FormData) {
       }
     })
 
+    // 2.5. Create Default Express Pass Product
+    await prisma.product.create({
+      data: {
+        gymId: gym.id,
+        name: 'Pase Express (1 Día)',
+        price: 150, // Default price
+        stock: 99999, // Infinite stock
+      }
+    })
+
     // 3. Create User (Gym Admin) linked to the gym
     const hashedPassword = await bcrypt.hash(password, 10)
     const user = await prisma.user.create({

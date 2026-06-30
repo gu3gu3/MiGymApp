@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Scanner } from '@yudiel/react-qr-scanner'
-import { Wifi, WifiOff, CheckCircle2, XCircle, RefreshCw, User, Clock, QrCode } from 'lucide-react'
+import { Wifi, WifiOff, CheckCircle2, XCircle, RefreshCw, User, Clock, QrCode, Zap } from 'lucide-react'
 import localforage from 'localforage'
 import toast from 'react-hot-toast'
+import { createExpressGuestPass, getExpressPassProduct } from '@/app/actions/gatekeeper/guest-pass'
 
 type ScanResult = {
   success: boolean
@@ -30,6 +31,19 @@ export default function GatekeeperPage() {
   const [lastScan, setLastScan] = useState<ScanResult | null>(null)
   const [recentLogs, setRecentLogs] = useState<CheckInLog[]>([])
   const [isScanning, setIsScanning] = useState(false)
+  const [isExpressModalOpen, setIsExpressModalOpen] = useState(false)
+  const [expressName, setExpressName] = useState('')
+  const [isExpressProcessing, setIsExpressProcessing] = useState(false)
+  const [expressPrice, setExpressPrice] = useState<number | null>(null)
+
+  // Fetch Express Pass Price
+  useEffect(() => {
+    getExpressPassProduct().then(product => {
+      if (product) {
+        setExpressPrice(Number(product.price))
+      }
+    })
+  }, [])
 
   // Hydrate offline status and queue
   useEffect(() => {
@@ -103,6 +117,41 @@ export default function GatekeeperPage() {
     }, 2500)
   }, [isOnline, offlineQueue, isScanning])
 
+  const handleExpressPass = async () => {
+    setIsExpressProcessing(true)
+    try {
+      const res = await createExpressGuestPass({ name: expressName })
+      if (res.success) {
+        setLastScan({
+          success: true,
+          message: res.message,
+          user: { name: res.user!.name, photoUrl: '', plan: res.user!.plan }
+        })
+        const newLog: CheckInLog = {
+          id: Math.random().toString(),
+          name: res.user!.name,
+          photoUrl: '',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          status: 'allowed'
+        }
+        setRecentLogs(prev => [newLog, ...prev].slice(0, 5))
+        setIsExpressModalOpen(false)
+        setExpressName('')
+        toast.success('Pase Express registrado exitosamente')
+        
+        setTimeout(() => {
+          setLastScan(null)
+        }, 3000)
+      } else {
+        toast.error(res.message)
+      }
+    } catch (e) {
+      toast.error('Error al registrar pase express')
+    } finally {
+      setIsExpressProcessing(false)
+    }
+  }
+
   // Escucha Global para Pistola USB (Emula teclado, termina con Enter)
   useEffect(() => {
     let buffer = ''
@@ -147,6 +196,25 @@ export default function GatekeeperPage() {
             <RefreshCw className="text-emerald-400 animate-spin w-5 h-5" />
           )}
         </div>
+
+        {/* Botón Pase Express */}
+        <button 
+          onClick={() => setIsExpressModalOpen(true)}
+          className="w-full bg-gradient-to-r from-slate-800 to-slate-900 border border-amber-500/30 hover:border-amber-500/60 p-4 rounded-xl flex items-center justify-between group transition-all shadow-lg"
+        >
+          <div className="flex items-center gap-3">
+            <div className="bg-amber-500/20 p-2 rounded-lg group-hover:bg-amber-500/30 transition-colors">
+              <Zap className="text-amber-400 w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-amber-500 group-hover:text-amber-400">Pase Express (1 Día)</p>
+              <p className="text-xs text-slate-400">Acceso rápido sin registrar</p>
+            </div>
+          </div>
+          <div className="px-3 py-1 bg-slate-950 rounded-full text-xs font-bold text-slate-300 border border-slate-800">
+            {expressPrice !== null ? `C$ ${expressPrice}` : 'C$ ...'}
+          </div>
+        </button>
 
         {/* Escáner Activo */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex-1 max-h-[400px] relative">
@@ -238,6 +306,50 @@ export default function GatekeeperPage() {
           </div>
         )}
       </div>
+
+      {/* Modal Pase Express */}
+      {isExpressModalOpen && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <Zap className="text-amber-400 w-5 h-5" />
+              </div>
+              <h2 className="text-xl font-bold text-white">Pase Express (1 Día)</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Nombre del Invitado (Opcional)</label>
+                <input 
+                  type="text" 
+                  value={expressName}
+                  onChange={(e) => setExpressName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                  placeholder="Ej. Juan Pérez"
+                />
+              </div>
+              
+              <div className="pt-4 flex gap-3">
+                <button 
+                  onClick={() => setIsExpressModalOpen(false)}
+                  className="flex-1 px-4 py-3 rounded-xl border border-slate-700 text-slate-300 font-medium hover:bg-slate-800 transition-colors"
+                  disabled={isExpressProcessing}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleExpressPass}
+                  disabled={isExpressProcessing}
+                  className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isExpressProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Cobrar y Acceder'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

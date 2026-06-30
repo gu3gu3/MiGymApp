@@ -40,16 +40,27 @@ export async function getSalesMetrics(gymId: string) {
   }
 }
 
-export async function getProducts(gymId: string) {
+export async function getProducts(gymId: string, onlyActive: boolean = false) {
+  const whereClause: any = { gymId }
+  if (onlyActive) {
+    whereClause.isActive = true
+  }
+
   const products = await prisma.product.findMany({
-    where: { gymId },
+    where: whereClause,
     orderBy: { name: 'asc' }
   })
   
   return products.map(p => ({
-    ...p,
+    id: p.id,
+    gymId: p.gymId,
+    name: p.name,
     price: Number(p.price),
-    costPrice: p.costPrice ? Number(p.costPrice) : null
+    costPrice: p.costPrice ? Number(p.costPrice) : null,
+    stock: p.stock,
+    minStock: p.minStock,
+    photoUrl: p.photoUrl,
+    isActive: p.isActive
   }))
 }
 
@@ -173,9 +184,89 @@ export async function createProduct(product: ProductCreateDTO) {
     revalidatePath('/admin/inventory')
     revalidatePath('/admin/pos')
 
-    return { success: true, product: result }
+    return { 
+      success: true, 
+      product: {
+        id: result.id,
+        gymId: result.gymId,
+        name: result.name,
+        price: Number(result.price),
+        costPrice: result.costPrice ? Number(result.costPrice) : null,
+        stock: result.stock,
+        minStock: result.minStock,
+        photoUrl: result.photoUrl,
+        isActive: result.isActive
+      }
+    }
   } catch (error: any) {
     console.error('Error creando producto:', error)
     return { success: false, error: error.message || 'Error desconocido al crear producto.' }
+  }
+}
+
+export type ProductUpdateDTO = {
+  id: string
+  name: string
+  price: number
+  costPrice?: number | null
+  stock: number
+  minStock: number
+  photoUrl?: string | null
+  isActive?: boolean
+}
+
+export async function updateProduct(product: ProductUpdateDTO) {
+  const session = await auth()
+  const user = session?.user as any
+  
+  if (!user || user.role !== 'GYM_ADMIN' || !user.gymId) {
+    throw new Error('No autorizado o sin gimnasio asignado')
+  }
+
+  const gymId = user.gymId
+
+  try {
+    // Verify ownership
+    const existing = await prisma.product.findUnique({
+      where: { id: product.id }
+    })
+
+    if (!existing || existing.gymId !== gymId) {
+      throw new Error('Producto no encontrado o no autorizado')
+    }
+
+    const result = await prisma.product.update({
+      where: { id: product.id },
+      data: {
+        name: product.name.trim(),
+        price: isNaN(Number(product.price)) ? 0 : Number(product.price),
+        costPrice: product.costPrice && !isNaN(Number(product.costPrice)) ? Number(product.costPrice) : null,
+        stock: isNaN(Number(product.stock)) ? 0 : Number(product.stock),
+        minStock: isNaN(Number(product.minStock)) ? 0 : Number(product.minStock),
+        ...(product.photoUrl !== undefined ? { photoUrl: product.photoUrl } : {}),
+        ...(product.isActive !== undefined ? { isActive: product.isActive } : {})
+      }
+    })
+
+    revalidatePath('/admin/inventory')
+    revalidatePath('/admin/pos')
+
+    return { 
+      success: true, 
+      product: {
+        id: result.id,
+        gymId: result.gymId,
+        name: result.name,
+        price: Number(result.price),
+        costPrice: result.costPrice ? Number(result.costPrice) : null,
+        stock: result.stock,
+        minStock: result.minStock,
+        photoUrl: result.photoUrl,
+        isActive: result.isActive
+      }
+    }
+  } catch (error: any) {
+    console.error('Error actualizando producto:', error)
+    return { success: false, error: error.message || 'Error desconocido al actualizar producto.' }
   }
 }

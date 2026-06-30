@@ -31,8 +31,15 @@ export async function getRecentCheckIns() {
       id: c.id,
       createdAt: c.createdAt,
       isOfflineSync: c.isOfflineSync,
-      user: c.user,
-      planName: c.subscription.plan.name
+      user: c.user || { 
+        id: 'guest', 
+        name: c.guestName || 'Invitado', 
+        email: '', 
+        image: null, 
+        identityDocument: null, 
+        phone: null 
+      },
+      planName: c.subscription?.plan?.name || 'Pase de Invitado'
     }))
   } catch (error) {
     console.error("Error fetching checkins:", error)

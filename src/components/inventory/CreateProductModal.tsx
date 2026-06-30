@@ -3,12 +3,25 @@
 import { useState, useRef } from 'react'
 import { X, Upload, Check, ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { createProduct } from '@/app/actions/admin/inventory'
+import { createProduct, updateProduct } from '@/app/actions/admin/inventory'
+import { useEffect } from 'react'
+
+export type ProductData = {
+  id: string
+  name: string
+  price: number
+  stock: number
+  minStock: number
+  costPrice: number | null
+  photoUrl: string | null
+  isActive?: boolean
+}
 
 type CreateProductModalProps = {
   isOpen: boolean
   onClose: () => void
   gymSlug: string
+  productToEdit?: ProductData | null
 }
 
 const PRESET_GRAPHICS = [
@@ -19,7 +32,7 @@ const PRESET_GRAPHICS = [
   { id: 'energy', emoji: '⚡', label: 'Pre-entreno' },
 ]
 
-export function CreateProductModal({ isOpen, onClose, gymSlug }: CreateProductModalProps) {
+export function CreateProductModal({ isOpen, onClose, gymSlug, productToEdit }: CreateProductModalProps) {
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [costPrice, setCostPrice] = useState('')
@@ -32,6 +45,37 @@ export function CreateProductModal({ isOpen, onClose, gymSlug }: CreateProductMo
   
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      if (productToEdit) {
+        setName(productToEdit.name)
+        setPrice(productToEdit.price.toString())
+        setCostPrice(productToEdit.costPrice ? productToEdit.costPrice.toString() : '')
+        setStock(productToEdit.stock.toString())
+        setMinStock(productToEdit.minStock.toString())
+        
+        if (productToEdit.photoUrl) {
+          if (productToEdit.photoUrl.startsWith('data:image/svg+xml')) {
+            const match = productToEdit.photoUrl.match(/<text.*>(.*)<\/text>/)
+            if (match) setSelectedEmoji(match[1])
+          } else {
+            setPreviewUrl(productToEdit.photoUrl)
+          }
+        }
+      } else {
+        // reset
+        setName('')
+        setPrice('')
+        setCostPrice('')
+        setStock('')
+        setMinStock('')
+        setSelectedEmoji(null)
+        setPreviewUrl(null)
+        setSelectedFile(null)
+      }
+    }
+  }, [isOpen, productToEdit])
 
   if (!isOpen) return null
 
@@ -116,22 +160,37 @@ export function CreateProductModal({ isOpen, onClose, gymSlug }: CreateProductMo
         const data = await res.json()
         if (data.error) throw new Error(data.error)
         finalPhotoUrl = data.url
+      } else if (productToEdit && productToEdit.photoUrl && !selectedEmoji && !selectedFile && previewUrl === productToEdit.photoUrl) {
+        finalPhotoUrl = productToEdit.photoUrl
       }
 
-      const result = await createProduct({
-        name,
-        price: parseFloat(price),
-        costPrice: costPrice ? parseFloat(costPrice) : null,
-        stock: parseInt(stock),
-        minStock: parseInt(minStock) || 0,
-        photoUrl: finalPhotoUrl
-      })
+      let result
+      if (productToEdit) {
+        result = await updateProduct({
+          id: productToEdit.id,
+          name,
+          price: parseFloat(price),
+          costPrice: costPrice ? parseFloat(costPrice) : null,
+          stock: parseInt(stock),
+          minStock: parseInt(minStock) || 0,
+          photoUrl: finalPhotoUrl
+        })
+      } else {
+        result = await createProduct({
+          name,
+          price: parseFloat(price),
+          costPrice: costPrice ? parseFloat(costPrice) : null,
+          stock: parseInt(stock),
+          minStock: parseInt(minStock) || 0,
+          photoUrl: finalPhotoUrl
+        })
+      }
 
       if (result.success) {
-        toast.success('Producto creado')
+        toast.success(productToEdit ? 'Producto actualizado' : 'Producto creado')
         onClose()
       } else {
-        toast.error(result.error || 'Error al crear producto')
+        toast.error(result.error || 'Error al guardar producto')
       }
     } catch (error: any) {
       toast.error(error.message || 'Error en el proceso')
@@ -144,7 +203,7 @@ export function CreateProductModal({ isOpen, onClose, gymSlug }: CreateProductMo
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
-          <h2 className="text-xl font-bold text-white">Nuevo Producto</h2>
+          <h2 className="text-xl font-bold text-white">{productToEdit ? 'Editar Producto' : 'Nuevo Producto'}</h2>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -230,7 +289,7 @@ export function CreateProductModal({ isOpen, onClose, gymSlug }: CreateProductMo
         <div className="p-6 border-t border-slate-800 bg-slate-950/50 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-400 hover:text-white transition-colors">Cancelar</button>
           <button type="submit" form="create-product-form" disabled={loading} className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition-colors flex items-center gap-2 disabled:opacity-50">
-            {loading ? 'Creando...' : <><Check className="w-5 h-5" /> Guardar Producto</>}
+            {loading ? 'Guardando...' : <><Check className="w-5 h-5" /> {productToEdit ? 'Actualizar Producto' : 'Guardar Producto'}</>}
           </button>
         </div>
       </div>

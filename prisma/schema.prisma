@@ -10,43 +10,43 @@ generator client {
 // 1. CORE DE USUARIOS E IDENTIDAD GLOBAL
 // ==========================================
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
+  id            String    @id @default(uuid())
+  email         String    @unique
   emailVerified DateTime?
-  password      String?        // Opcional por si entran con OAuth
+  password      String? // Opcional por si entran con OAuth
   name          String
-  image         String?        // NextAuth usa "image" por defecto, lo mapeamos aquí
-  role          UserRole       @default(ATHLETE)
-  isClaimed     Boolean        @default(false) // True si el atleta ya reclamó/creó su cuenta
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
+  image         String? // NextAuth usa "image" por defecto, lo mapeamos aquí
+  role          UserRole  @default(ATHLETE)
+  isClaimed     Boolean   @default(false) // True si el atleta ya reclamó/creó su cuenta
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
   // Activación de cuenta
-  activationToken   String?    @unique
+  activationToken   String?   @unique
   activationExpires DateTime?
-  
+
   // Datos Físicos y Médicos (Calculables)
-  identityDocument String?
-  address       String?
-  phone         String?
+  identityDocument      String?
+  address               String?
+  phone                 String?
   emergencyContactName  String?
   emergencyContactPhone String?
-  gender        String?        // Ej: 'MALE', 'FEMALE', 'OTHER'
-  weight        Float?         // Almacenado en KG
-  height        Float?         // Almacenado en CM
-  bmi           Float?         // Calculado (Weight / Height^2)
-  
+  gender                String? // Ej: 'MALE', 'FEMALE', 'OTHER'
+  weight                Float? // Almacenado en KG
+  height                Float? // Almacenado en CM
+  bmi                   Float? // Calculado (Weight / Height^2)
+
   // Relaciones
-  gymId         String?        // ID del gimnasio si es GYM_ADMIN o COACH
+  gymId         String? // ID del gimnasio si es GYM_ADMIN o COACH
   managedGym    Gym?           @relation("GymStaff", fields: [gymId], references: [id])
   accounts      Account[]
   subscriptions Subscription[] // Suscripciones en diferentes gyms (M:N)
-  purchases     Sale[]         // Compras hechas en el POS o Marketplace
-  checkIns      CheckIn[]      // Historial de accesos
-  
+  purchases     Sale[] // Compras hechas en el POS o Marketplace
+  checkIns      CheckIn[] // Historial de accesos
+
   // Gamificación
-  xp            Int            @default(0)
-  level         Int            @default(1)
+  xp    Int @default(0)
+  level Int @default(1)
 }
 
 // ==========================================
@@ -73,46 +73,46 @@ model Account {
 
 enum UserRole {
   SUPER_ADMIN // Vos (Control central de sponsors y broadcasting)
-  GYM_ADMIN   // Dueños/Recepcionistas de Gimnasios
-  RECEPTIONIST// Operario del día a día (Gatekeeper, POS)
-  COACH       // Entrenadores
-  ATHLETE     // Usuarios finales
+  GYM_ADMIN // Dueños/Recepcionistas de Gimnasios
+  RECEPTIONIST // Operario del día a día (Gatekeeper, POS)
+  COACH // Entrenadores
+  ATHLETE // Usuarios finales
 }
 
 // ==========================================
 // 2. GIMNASIOS (NODOS DEL ECOSISTEMA)
 // ==========================================
 model Gym {
-  id             String         @id @default(uuid())
+  id             String   @id @default(uuid())
   name           String
-  slug           String         @unique // Para la URL pública del gym
+  slug           String   @unique // Para la URL pública del gym
   logoUrl        String?
-  bannerUrl      String?        // Para la cabecera del wallet y competencias
+  bannerUrl      String? // Para la cabecera del wallet y competencias
   address        String
-  country        String?        @default("Nicaragua")
+  country        String?  @default("Nicaragua")
   department     String?
-  latitude       Float?         // Para la búsqueda con IA basada en ubicación
+  latitude       Float? // Para la búsqueda con IA basada en ubicación
   longitude      Float?
-  platformPlanId String?        // FK al plan SaaS B2B
-  currency       String?        @default("NIO")
-  exchangeRate   Float?         @default(1.0)
-  isLocked       Boolean        @default(false) // SaaS Lock
-  posPlan        PosPlan        @default(KIOSKO)
-  createdAt      DateTime       @default(now())
-  
+  platformPlanId String? // FK al plan SaaS B2B
+  currency       String?  @default("NIO")
+  exchangeRate   Float?   @default(1.0)
+  isLocked       Boolean  @default(false) // SaaS Lock
+  posPlan        PosPlan  @default(KIOSKO)
+  createdAt      DateTime @default(now())
+
   // Relaciones
-  staff          User[]         @relation("GymStaff")
-  subscriptions  Subscription[]
-  plans          Plan[]
-  products       Product[]
-  checkIns       CheckIn[]
-  sales          Sale[]
-  
+  staff         User[]         @relation("GymStaff")
+  subscriptions Subscription[]
+  plans         Plan[]
+  products      Product[]
+  checkIns      CheckIn[]
+  sales         Sale[]
+
   // Gamificación / Escudería
-  teamName       String?        // Nombre de la escudería
-  teamColor      String?        // Color corporativo para los matches
-  competitions   GymInCompetition[]
-  platformPlan   PlatformPlan?  @relation(fields: [platformPlanId], references: [id])
+  teamName     String? // Nombre de la escudería
+  teamColor    String? // Color corporativo para los matches
+  competitions GymInCompetition[]
+  platformPlan PlatformPlan?      @relation(fields: [platformPlanId], references: [id])
 }
 
 enum PosPlan {
@@ -125,28 +125,28 @@ enum PosPlan {
 // 3. TABLA INTERMEDIA (M:N) - PORTABILIDAD DE SUSCRIPCIONES
 // ==========================================
 model Subscription {
-  id             String             @id @default(uuid())
-  userId         String
-  gymId          String
-  planId         String
-  status         SubscriptionStatus @default(PENDING)
-  
+  id     String             @id @default(uuid())
+  userId String
+  gymId  String
+  planId String
+  status SubscriptionStatus @default(PENDING)
+
   // Lógica de expiración (Modular)
-  startDate      DateTime           @default(now())
-  endDate        DateTime?          // Para planes basados en tiempo continuos
-  remainingTotal Int?               // Para planes basados en créditos/visitas (Decrementador)
-  
+  startDate      DateTime  @default(now())
+  endDate        DateTime? // Para planes basados en tiempo continuos
+  remainingTotal Int? // Para planes basados en créditos/visitas (Decrementador)
+
   // Notas Privadas del Gimnasio
-  internalNotes  String?            @db.Text // Alias o notas privadas editables solo por el gym admin
-  
+  internalNotes String? @db.Text // Alias o notas privadas editables solo por el gym admin
+
   // Seguridad y Failover
-  offlineToken   String             @unique // JWT pre-firmado guardado en la PWA del usuario
-  
+  offlineToken String @unique // JWT pre-firmado guardado en la PWA del usuario
+
   // Relaciones
-  user           User               @relation(fields: [userId], references: [id])
-  gym            Gym                @relation(fields: [gymId], references: [id])
-  plan           Plan               @relation(fields: [planId], references: [id])
-  checkIns       CheckIn[]
+  user     User      @relation(fields: [userId], references: [id])
+  gym      Gym       @relation(fields: [gymId], references: [id])
+  plan     Plan      @relation(fields: [planId], references: [id])
+  checkIns CheckIn[]
 
   @@unique([userId, gymId, planId]) // Evita duplicar la misma suscripción activa
 }
@@ -162,17 +162,17 @@ enum SubscriptionStatus {
 // 4. PLANES, INVENTARIO Y POS
 // ==========================================
 model Plan {
-  id            String         @id @default(uuid())
-  gymId         String
-  name          String
-  price         Decimal        @db.Decimal(10, 2)
-  currency      String         @default("NIO")
-  type          PlanType       // Define si mide tiempo o créditos
-  durationDays  Int?           // Ej: 30 días
-  totalCredits  Int?           // Ej: 12 pases
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  
+  id           String   @id @default(uuid())
+  gymId        String
+  name         String
+  price        Decimal  @db.Decimal(10, 2)
+  currency     String   @default("NIO")
+  type         PlanType // Define si mide tiempo o créditos
+  durationDays Int? // Ej: 30 días
+  totalCredits Int? // Ej: 12 pases
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
   gym           Gym            @relation(fields: [gymId], references: [id])
   subscriptions Subscription[]
 }
@@ -183,47 +183,49 @@ enum PlanType {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  gymId       String
-  name        String
-  price       Decimal  @db.Decimal(10, 2)
-  costPrice   Decimal? @db.Decimal(10, 2)
-  stock       Int      @default(0)
-  minStock    Int      @default(5) // Alerta visual en la UI de stock bajo
-  photoUrl    String?
-  
-  gym         Gym      @relation(fields: [gymId], references: [id])
-  saleItems   SaleItem[]
+  id        String   @id @default(uuid())
+  gymId     String
+  name      String
+  price     Decimal  @db.Decimal(10, 2)
+  costPrice Decimal? @db.Decimal(10, 2)
+  stock     Int      @default(0)
+  minStock  Int      @default(5) // Alerta visual en la UI de stock bajo
+  photoUrl  String?
+  isActive  Boolean  @default(true)
+
+  gym       Gym        @relation(fields: [gymId], references: [id])
+  saleItems SaleItem[]
 }
 
 model Sale {
-  id          String   @id @default(uuid())
-  gymId       String
-  userId      String?  // Opcional por si es venta a público general en barra
-  total       Decimal  @db.Decimal(10, 2)
-  type        SaleType @default(POS_PHYSICAL) // Diferencia preventa digital de venta directa
-  createdAt   DateTime @default(now())
-  
-  gym         Gym      @relation(fields: [gymId], references: [id])
-  user        User?    @relation(fields: [userId], references: [id])
-  items       SaleItem[]
+  id        String   @id @default(uuid())
+  gymId     String
+  userId    String? // Opcional por si es venta a público general en barra
+  total     Decimal  @db.Decimal(10, 2)
+  type      SaleType @default(POS_PHYSICAL) // Diferencia preventa digital de venta directa
+  createdAt DateTime @default(now())
+
+  gym      Gym        @relation(fields: [gymId], references: [id])
+  user     User?      @relation(fields: [userId], references: [id])
+  items    SaleItem[]
+  checkIns CheckIn[]
 }
 
 enum SaleType {
   MARKETPLACE_DIGITAL // Comprado desde la PWA del atleta, genera QR de retiro
-  POS_PHYSICAL        // Comprado en la caja del Gym en físico
+  POS_PHYSICAL // Comprado en la caja del Gym en físico
 }
 
 model SaleItem {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   saleId    String
   productId String
   quantity  Int
-  price     Decimal  @db.Decimal(10, 2) // Precio histórico al momento de la venta
-  isClaimed Boolean  @default(false)    // True cuando escanean el QR de entrega del batido/proteína
+  price     Decimal @db.Decimal(10, 2) // Precio histórico al momento de la venta
+  isClaimed Boolean @default(false) // True cuando escanean el QR de entrega del batido/proteína
 
-  sale      Sale     @relation(fields: [saleId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }
 
 // ==========================================
@@ -232,16 +234,19 @@ model SaleItem {
 model CheckIn {
   id             String   @id @default(uuid())
   gymId          String
-  userId         String
-  subscriptionId String
+  userId         String?
+  subscriptionId String?
+  saleId         String? // Para pases express vendidos en caja
+  guestName      String? // Nombre del invitado si no tiene cuenta
   createdAt      DateTime @default(now())
-  
-  // Bandera de Failover
-  isOfflineSync  Boolean  @default(false) // True si se hizo sin internet y se sincronizó después
 
-  gym            Gym          @relation(fields: [gymId], references: [id])
-  user           User         @relation(fields: [userId], references: [id])
-  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  // Bandera de Failover
+  isOfflineSync Boolean @default(false) // True si se hizo sin internet y se sincronizó después
+
+  gym          Gym           @relation(fields: [gymId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  sale         Sale?         @relation(fields: [saleId], references: [id])
 }
 
 // ==========================================
@@ -253,43 +258,43 @@ model Sponsor {
   logoUrl      String
   websiteUrl   String?
   adBudget     Decimal?      @db.Decimal(10, 2)
-  promoOffer   String?       // Ej: 20% OFF en Whey Protein con código WHEY20
+  promoOffer   String? // Ej: 20% OFF en Whey Protein con código WHEY20
   createdAt    DateTime      @default(now())
   competitions Competition[] // Banners patrocinados
 }
 
 model Competition {
-  id              String            @id @default(uuid())
-  sponsorId       String?           // Opcional, puede ser un match directo entre gyms sin marca
-  title           String            // Ej: Copa Whey Protein 2026
-  description     String
-  prize           String?           // Ej: $1,000 en equipamiento
-  minActiveUsers  Int               @default(0) // Filtro B2B
-  startDate       DateTime
-  endDate         DateTime
-  status          CompStatus        @default(BROADCASTING) // Estado inicial
-  
-  sponsor         Sponsor?          @relation(fields: [sponsorId], references: [id])
+  id             String     @id @default(uuid())
+  sponsorId      String? // Opcional, puede ser un match directo entre gyms sin marca
+  title          String // Ej: Copa Whey Protein 2026
+  description    String
+  prize          String? // Ej: $1,000 en equipamiento
+  minActiveUsers Int        @default(0) // Filtro B2B
+  startDate      DateTime
+  endDate        DateTime
+  status         CompStatus @default(BROADCASTING) // Estado inicial
+
+  sponsor           Sponsor?           @relation(fields: [sponsorId], references: [id])
   gymsParticipating GymInCompetition[]
 }
 
 enum CompStatus {
   BROADCASTING // Emitida por vos, los gyms la están viendo en sus paneles para aplicar
-  UPCOMING     // Lista para empezar con los gyms confirmados
-  ACTIVE       // Corriendo en tiempo real, usuarios sumando puntos
-  FINISHED     // Finalizada, copas asignadas
+  UPCOMING // Lista para empezar con los gyms confirmados
+  ACTIVE // Corriendo en tiempo real, usuarios sumando puntos
+  FINISHED // Finalizada, copas asignadas
 }
 
 // Tabla pivote para registrar qué Gyms entraron al torneo y su puntaje actual
 model GymInCompetition {
-  id            String      @id @default(uuid())
+  id            String  @id @default(uuid())
   gymId         String
   competitionId String
-  score         Int         @default(0) // Puntos acumulados por los atletas de este gym
-  isConfirmed   Boolean     @default(false) // True si aplicó al broadcasting o aceptó el reto manual
+  score         Int     @default(0) // Puntos acumulados por los atletas de este gym
+  isConfirmed   Boolean @default(false) // True si aplicó al broadcasting o aceptó el reto manual
 
-  gym           Gym         @relation(fields: [gymId], references: [id])
-  competition   Competition @relation(fields: [competitionId], references: [id])
+  gym         Gym         @relation(fields: [gymId], references: [id])
+  competition Competition @relation(fields: [competitionId], references: [id])
 
   @@unique([gymId, competitionId])
 }
@@ -298,13 +303,13 @@ model GymInCompetition {
 // 7. SAAS B2B PLATFORM PLANS
 // ==========================================
 model PlatformPlan {
-  id            String   @id @default(uuid())
-  name          String
-  maxAthletes   Int?     // Si es null, es ilimitado
-  priceNio      Decimal  @db.Decimal(10, 2)
-  priceUsd      Decimal  @db.Decimal(10, 2)
-  isCustom      Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id          String   @id @default(uuid())
+  name        String
+  maxAthletes Int? // Si es null, es ilimitado
+  priceNio    Decimal  @db.Decimal(10, 2)
+  priceUsd    Decimal  @db.Decimal(10, 2)
+  isCustom    Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
-  gyms          Gym[]
+  gyms Gym[]
 }

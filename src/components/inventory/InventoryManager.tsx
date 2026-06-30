@@ -1,24 +1,15 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { importProductsCSV, ProductImportDTO } from '@/app/actions/admin/inventory'
-import { Download, Upload, AlertCircle, Package, Image as ImageIcon, Plus, DollarSign, Trophy, TrendingUp } from 'lucide-react'
+import { importProductsCSV, ProductImportDTO, updateProduct } from '@/app/actions/admin/inventory'
+import { Download, Upload, AlertCircle, Package, Image as ImageIcon, Plus, DollarSign, Trophy, TrendingUp, Edit2, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { CreateProductModal } from './CreateProductModal'
-
-type ProductData = {
-  id: string
-  name: string
-  price: number
-  stock: number
-  minStock: number
-  costPrice: number | null
-  photoUrl: string | null
-}
+import { CreateProductModal, ProductData } from './CreateProductModal'
 
 export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug = 'general', currency = 'NIO', exchangeRate = 1, salesMetrics = { today: 0, week: 0, month: 0 } }: { initialProducts: ProductData[], posPlan: string, maxLimit: number, gymSlug?: string, currency?: string, exchangeRate?: number, salesMetrics?: { today: number, week: number, month: number } }) {
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [productToEdit, setProductToEdit] = useState<ProductData | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Toggle para ver en USD si la moneda local es diferente
@@ -91,8 +82,12 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
     <div className="space-y-6">
       <CreateProductModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false)
+          setProductToEdit(null)
+        }}
         gymSlug={gymSlug}
+        productToEdit={productToEdit}
       />
 
       {/* Sales Performance Cards */}
@@ -139,7 +134,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
             <h3 className="font-bold text-sm uppercase tracking-wider">Valor en Inventario</h3>
           </div>
           <p className="text-3xl font-black text-white">
-            {getDisplayPrice(initialProducts.reduce((acc, p) => acc + (p.price * p.stock), 0))}
+            {getDisplayPrice(initialProducts.filter(p => p.isActive).reduce((acc, p) => acc + (p.price * p.stock), 0))}
           </p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center">
@@ -148,7 +143,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
             <h3 className="font-bold text-sm uppercase tracking-wider">Costo Estimado</h3>
           </div>
           <p className="text-3xl font-black text-white">
-            {getDisplayPrice(initialProducts.reduce((acc, p) => acc + ((p.costPrice || 0) * p.stock), 0))}
+            {getDisplayPrice(initialProducts.filter(p => p.isActive).reduce((acc, p) => acc + ((p.costPrice || 0) * p.stock), 0))}
           </p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center relative overflow-hidden">
@@ -160,7 +155,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
             <h3 className="font-bold text-sm uppercase tracking-wider">Ganancia Bruta (Proyectada)</h3>
           </div>
           <p className="text-3xl font-black text-purple-400 relative z-10">
-            {getDisplayPrice(initialProducts.reduce((acc, p) => acc + ((p.price - (p.costPrice || p.price)) * p.stock), 0))}
+            {getDisplayPrice(initialProducts.filter(p => p.isActive).reduce((acc, p) => acc + ((p.price - (p.costPrice || p.price)) * p.stock), 0))}
           </p>
         </div>
       </div>
@@ -182,7 +177,10 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setProductToEdit(null)
+              setIsModalOpen(true)
+            }}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95 text-sm"
           >
             <Plus className="w-5 h-5" /> Crear Producto
@@ -252,6 +250,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
                 <th className="p-4 font-semibold">Ganancia</th>
                 <th className="p-4 font-semibold">Stock Actual</th>
                 <th className="p-4 font-semibold">Estado</th>
+                <th className="p-4 font-semibold text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -297,11 +296,39 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
                       {p.stock}
                     </td>
                     <td className="p-4">
-                      {p.stock <= p.minStock ? (
+                      {!p.isActive ? (
+                        <span className="px-2 py-1 text-[10px] uppercase font-bold rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20">Deshabilitado</span>
+                      ) : p.stock <= p.minStock ? (
                         <span className="px-2 py-1 text-[10px] uppercase font-bold rounded-full bg-red-500/10 text-red-400 border border-red-500/20">Stock Bajo</span>
                       ) : (
                         <span className="px-2 py-1 text-[10px] uppercase font-bold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">En Stock</span>
                       )}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={async () => {
+                            const loadingToast = toast.loading('Actualizando...')
+                            const res = await updateProduct({ ...p, isActive: !p.isActive })
+                            if (res.success) toast.success(p.isActive ? 'Producto deshabilitado' : 'Producto activado', { id: loadingToast })
+                            else toast.error('Error', { id: loadingToast })
+                          }}
+                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700"
+                          title={p.isActive ? "Deshabilitar" : "Activar"}
+                        >
+                          {p.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setProductToEdit(p)
+                            setIsModalOpen(true)
+                          }}
+                          className="p-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg transition-colors border border-cyan-500/20"
+                          title="Editar Producto"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

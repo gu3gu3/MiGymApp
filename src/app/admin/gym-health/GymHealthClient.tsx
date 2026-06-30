@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Users, Shield, CalendarDays, TrendingUp, Calendar, DollarSign, Activity, BarChart2 } from 'lucide-react'
 
-export default function GymHealthClient({ athletes, currency = 'USD' }: { athletes: any[], currency?: string }) {
+export default function GymHealthClient({ athletes, currency = 'USD', expressSales = [] }: { athletes: any[], currency?: string, expressSales?: any[] }) {
   const [limit, setLimit] = useState<number>(25)
   const symbol = currency === 'NIO' ? 'C$' : currency === 'USD' ? '$' : currency
 
@@ -54,13 +54,26 @@ export default function GymHealthClient({ athletes, currency = 'USD' }: { athlet
       }
     })
 
+    // Sumar ventas de Pase Express del mes
+    expressSales.forEach(sale => {
+      const d = new Date(sale.createdAt)
+      if (d.getFullYear() === year && (d.getMonth() + 1) === month) {
+        const price = sale.total
+        daily += price // Un pase de 1 día rinde su ingreso en 1 día
+        weekly += price 
+        monthly += price
+        
+        planPopularity['Pase Express (1 Día)'] = (planPopularity['Pase Express (1 Día)'] || 0) + 1
+      }
+    })
+
     const totalUsersInMonth = Object.values(planPopularity).reduce((a, b) => a + b, 0)
     const sortedPlans = Object.entries(planPopularity)
       .map(([name, count]) => ({ name, count, percentage: totalUsersInMonth ? (count / totalUsersInMonth) * 100 : 0 }))
       .sort((a, b) => b.count - a.count)
 
     return { daily, weekly, monthly, sortedPlans, totalUsersInMonth }
-  }, [athletes, selectedMonth])
+  }, [athletes, selectedMonth, expressSales])
 
   const visibleAthletes = limit === -1 ? athletes : athletes.slice(0, limit)
   return (
