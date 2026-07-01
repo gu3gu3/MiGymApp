@@ -7,6 +7,8 @@ SERVICE="migymapp.service"
 DATE_TAG=$(date +%Y%m%d-%H%M%S)
 RUN_AS="migymapp"
 
+cd "$APP_DIR"
+
 # Load production environment variables
 set -a
 source "$APP_DIR/.env"
