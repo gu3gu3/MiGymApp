@@ -21,6 +21,7 @@ mkdir -p "$BACKUP_DIR"
 pg_dump "$DB_URL" > "$BACKUP_DIR/migymapp-pre-deploy-${DATE_TAG}.sql"
 
 echo "==> [2/6] Fetching latest code from origin/main"
+runuser -u "$RUN_AS" -- git config --global --add safe.directory "$APP_DIR" || true
 runuser -u "$RUN_AS" -- git -C "$APP_DIR" fetch origin main
 runuser -u "$RUN_AS" -- git -C "$APP_DIR" reset --hard origin/main
 
