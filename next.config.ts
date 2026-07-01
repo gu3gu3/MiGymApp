@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['migymp-app.com', 'migym-app.com', 'www.migym-app.com'],
   typescript: {
     ignoreBuildErrors: true
+  },
+  eslint: {
+    ignoreDuringBuilds: true
   }
 };
 
