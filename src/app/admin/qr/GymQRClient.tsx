@@ -2,7 +2,7 @@
 
 import { QRCodeSVG } from 'qrcode.react'
 import { QrCode, Download, Printer } from "lucide-react"
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 
 interface GymQRClientProps {
   gymName: string
@@ -12,6 +12,22 @@ interface GymQRClientProps {
 
 export default function GymQRClient({ gymName, gymUrl, gymLogoUrl }: GymQRClientProps) {
   const qrRef = useRef<HTMLDivElement>(null)
+  const [logoBase64, setLogoBase64] = useState<string | null>(null)
+
+  // Fetch the logo and convert it to Base64 so that the canvas can export it without cross-origin errors
+  useEffect(() => {
+    if (!gymLogoUrl) return
+    fetch(gymLogoUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setLogoBase64(reader.result as string)
+        }
+        reader.readAsDataURL(blob)
+      })
+      .catch(err => console.error('Error loading logo for QR:', err))
+  }, [gymLogoUrl])
 
   const handleDownload = () => {
     if (!qrRef.current) return
@@ -44,29 +60,32 @@ export default function GymQRClient({ gymName, gymUrl, gymLogoUrl }: GymQRClient
     <>
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
-          body * {
-            visibility: hidden;
+          @page { margin: 0; }
+          body { 
+            background: white !important; 
           }
-          #print-section, #print-section * {
-            visibility: visible;
+          .no-print {
+            display: none !important;
+          }
+          /* Hide the Next.js sidebar/navigation if they don't have .no-print */
+          nav, aside, header {
+            display: none !important;
           }
           #print-section {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100vh;
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
             margin: 0 !important;
             padding: 2cm !important;
-            box-sizing: border-box;
+            box-sizing: border-box !important;
             background: white !important;
-          }
-          .no-print {
-            display: none !important;
+            z-index: 999999 !important;
           }
         }
       `}} />
@@ -104,8 +123,8 @@ export default function GymQRClient({ gymName, gymUrl, gymLogoUrl }: GymQRClient
                 size={350}
                 level={"H"}
                 includeMargin={true}
-                imageSettings={gymLogoUrl ? {
-                  src: gymLogoUrl,
+                imageSettings={(logoBase64 || gymLogoUrl) ? {
+                  src: logoBase64 || gymLogoUrl!,
                   height: 80,
                   width: 80,
                   excavate: true,
