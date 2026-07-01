@@ -25,7 +25,9 @@ runuser -u "$RUN_AS" -- git -C "$APP_DIR" fetch origin main
 runuser -u "$RUN_AS" -- git -C "$APP_DIR" reset --hard origin/main
 
 echo "==> [3/6] Installing dependencies"
-runuser -u "$RUN_AS" -- npm ci
+# NODE_ENV=production from .env would skip devDependencies,
+# which are required for the Next.js build step.
+runuser -u "$RUN_AS" -- bash -c "cd $APP_DIR && NODE_ENV=development npm ci"
 
 echo "==> [4/6] Applying database migrations"
 runuser -u "$RUN_AS" -- bash -c "cd $APP_DIR && npx prisma migrate deploy"
