@@ -134,7 +134,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
             <h3 className="font-bold text-sm uppercase tracking-wider">Valor en Inventario</h3>
           </div>
           <p className="text-3xl font-black text-white">
-            {getDisplayPrice(initialProducts.filter(p => p.isActive).reduce((acc, p) => acc + (p.price * p.stock), 0))}
+            {getDisplayPrice(initialProducts.filter(p => p.isActive && !p.name.toLowerCase().includes('pase express')).reduce((acc, p) => acc + (p.price * p.stock), 0))}
           </p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center">
@@ -143,7 +143,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
             <h3 className="font-bold text-sm uppercase tracking-wider">Costo Estimado</h3>
           </div>
           <p className="text-3xl font-black text-white">
-            {getDisplayPrice(initialProducts.filter(p => p.isActive).reduce((acc, p) => acc + ((p.costPrice || 0) * p.stock), 0))}
+            {getDisplayPrice(initialProducts.filter(p => p.isActive && !p.name.toLowerCase().includes('pase express')).reduce((acc, p) => acc + ((p.costPrice || 0) * p.stock), 0))}
           </p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center relative overflow-hidden">
@@ -155,7 +155,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
             <h3 className="font-bold text-sm uppercase tracking-wider">Ganancia Bruta (Proyectada)</h3>
           </div>
           <p className="text-3xl font-black text-purple-400 relative z-10">
-            {getDisplayPrice(initialProducts.filter(p => p.isActive).reduce((acc, p) => acc + ((p.price - (p.costPrice || p.price)) * p.stock), 0))}
+            {getDisplayPrice(initialProducts.filter(p => p.isActive && !p.name.toLowerCase().includes('pase express')).reduce((acc, p) => acc + ((p.price - (p.costPrice || p.price)) * p.stock), 0))}
           </p>
         </div>
       </div>
