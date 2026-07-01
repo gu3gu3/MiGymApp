@@ -94,10 +94,11 @@ export default function GymQRClient({ gymName, gymUrl, gymLogoUrl }: GymQRClient
               text-align: center;
               background: white;
             }
-            h1 { font-size: 3.5rem; margin-bottom: 0.5rem; color: #0f172a; font-weight: 900; }
-            p.subtitle { font-size: 1.5rem; color: #475569; margin-bottom: 3rem; font-weight: 600; }
-            .qr-container { padding: 1.5rem; border: 2px solid #f1f5f9; border-radius: 1.5rem; background: white; }
-            p.url { font-size: 1.25rem; font-family: monospace; color: #64748b; margin-top: 3rem; border-top: 2px solid #f1f5f9; padding-top: 2rem; width: 80%; max-width: 600px; }
+            h1 { font-size: 4rem; margin-bottom: 0.5rem; color: #0f172a; font-weight: 900; }
+            p.subtitle { font-size: 1.75rem; color: #475569; margin-bottom: 4rem; font-weight: 600; }
+            .qr-container { padding: 2rem; border: 3px solid #f1f5f9; border-radius: 2rem; background: white; }
+            .qr-container svg { width: 600px !important; height: 600px !important; }
+            p.url { font-size: 1.5rem; font-family: monospace; color: #64748b; margin-top: 4rem; border-top: 2px solid #f1f5f9; padding-top: 2rem; width: 80%; max-width: 800px; }
           </style>
         </head>
         <body>
