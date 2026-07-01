@@ -30,10 +30,13 @@ runuser -u "$RUN_AS" -- npm ci
 echo "==> [4/6] Applying database migrations"
 runuser -u "$RUN_AS" -- bash -c "cd $APP_DIR && npx prisma migrate deploy"
 
-echo "==> [5/6] Building application"
+echo "==> [5/6] Generating Prisma client"
+runuser -u "$RUN_AS" -- bash -c "cd $APP_DIR && npx prisma generate"
+
+echo "==> [6/6] Building application"
 runuser -u "$RUN_AS" -- npm run build
 
-echo "==> [6/6] Restarting service"
+echo "==> [7/6] Restarting service"
 sudo systemctl restart "$SERVICE"
 
 echo "==> Deployment complete"
