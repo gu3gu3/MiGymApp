@@ -39,7 +39,7 @@ export async function resetStaffPassword(targetUserId: string) {
     return { success: false, error: 'Usuario no encontrado' }
   }
 
-  if (targetUser.role !== 'GYM_ADMIN' && targetUser.role !== 'COACH') {
+  if (targetUser.role !== 'RECEPTIONIST' && targetUser.role !== 'COACH') {
     return { success: false, error: 'Solo puedes resetear la contraseña del staff operativo' }
   }
 
