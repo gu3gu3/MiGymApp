@@ -125,7 +125,7 @@ export default function GymQRClient({ gymName, gymUrl, gymLogoUrl }: GymQRClient
 
   return (
     <>
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto w-full h-full overflow-y-auto custom-scrollbar">
         <div className="mb-8">
           <h1 className="text-3xl font-black text-white flex items-center gap-3">
             <QrCode className="w-8 h-8 text-purple-400" />

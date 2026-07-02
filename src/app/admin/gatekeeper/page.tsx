@@ -177,9 +177,9 @@ export default function GatekeeperPage() {
   }, [processScan])
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-6 p-6">
+    <div className="h-full flex flex-col lg:flex-row gap-6 p-4 md:p-6 overflow-y-auto custom-scrollbar">
       {/* Columna Izquierda: Escáner y Estado */}
-      <div className="w-full lg:w-1/3 flex flex-col gap-6">
+      <div className="w-full lg:w-1/3 flex flex-col gap-4 md:gap-6">
         
         {/* Widget Failover */}
         <div className={`p-4 rounded-xl border flex items-center justify-between ${isOnline ? 'bg-emerald-950/30 border-emerald-500/20' : 'bg-orange-950/30 border-orange-500/20'}`}>
@@ -270,7 +270,7 @@ export default function GatekeeperPage() {
       </div>
 
       {/* Columna Derecha: Pantalla de Feedback Gigante */}
-      <div className="w-full lg:w-2/3 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-10 relative">
+      <div className="w-full lg:w-2/3 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-6 md:p-10 relative min-h-[300px] lg:min-h-0">
         {!lastScan ? (
           <div className="text-center opacity-30">
             <QrCode className="w-32 h-32 mx-auto mb-6 text-slate-500" />
