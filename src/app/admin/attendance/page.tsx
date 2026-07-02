@@ -40,12 +40,12 @@ export default function AttendancePage() {
 
   const filteredCheckIns = checkIns.filter(c => 
     c.user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.user.identityDocument?.includes(searchTerm)
+    c.user.identityDocument?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
-    <div className="h-full overflow-y-auto p-8 max-w-7xl mx-auto w-full custom-scrollbar">
-      <div className="flex justify-between items-end mb-8">
+    <div className="h-full overflow-y-auto p-4 md:p-8 max-w-7xl mx-auto w-full custom-scrollbar">
+      <div className="flex flex-col md:flex-row md:justify-between items-start md:items-end gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-black text-white flex items-center gap-3">
             <UserCheck className="w-8 h-8 text-cyan-400" /> Registro de Asistencia
@@ -54,7 +54,7 @@ export default function AttendancePage() {
         </div>
         <button 
           onClick={loadAttendance}
-          className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-colors text-slate-400 hover:text-cyan-400"
+          className="p-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-colors text-slate-400 hover:text-cyan-400 self-end md:self-auto"
         >
           <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
@@ -76,7 +76,7 @@ export default function AttendancePage() {
             <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
-              placeholder="Buscar por nombre o DNI..." 
+              placeholder="Buscar por nombre o identificación..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-cyan-500"
@@ -86,7 +86,7 @@ export default function AttendancePage() {
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="grid grid-cols-12 gap-4 p-4 border-b border-slate-800 bg-slate-950/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <div className="hidden sm:grid grid-cols-12 gap-4 p-4 border-b border-slate-800 bg-slate-950/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
           <div className="col-span-1 text-center">Foto</div>
           <div className="col-span-4">Atleta</div>
           <div className="col-span-3">Plan Activo</div>
