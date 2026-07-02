@@ -93,25 +93,25 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
       {/* Sales Performance Cards */}
       <h2 className="text-lg font-bold text-slate-300 px-1 mt-8">Rendimiento Real de Ventas</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-cyan-950 to-slate-900 border border-cyan-900/50 rounded-2xl p-6 shadow-[0_0_20px_rgba(6,182,212,0.1)] flex flex-col justify-center">
+        <div className="bg-gradient-to-br from-cyan-950 to-slate-900 border border-cyan-900/50 rounded-2xl p-4 md:p-6 shadow-[0_0_20px_rgba(6,182,212,0.1)] flex flex-col justify-center">
           <div className="flex items-center gap-3 text-cyan-400 mb-2">
             <TrendingUp className="w-5 h-5" />
             <h3 className="font-bold text-sm uppercase tracking-wider">Ventas de Hoy</h3>
           </div>
-          <p className="text-4xl font-black text-white">
+          <p className="text-3xl lg:text-4xl font-black text-white">
             {getDisplayPrice(salesMetrics.today)}
           </p>
         </div>
-        <div className="bg-gradient-to-br from-emerald-950 to-slate-900 border border-emerald-900/50 rounded-2xl p-6 shadow-[0_0_20px_rgba(16,185,129,0.1)] flex flex-col justify-center">
+        <div className="bg-gradient-to-br from-emerald-950 to-slate-900 border border-emerald-900/50 rounded-2xl p-4 md:p-6 shadow-[0_0_20px_rgba(16,185,129,0.1)] flex flex-col justify-center">
           <div className="flex items-center gap-3 text-emerald-400 mb-2">
             <DollarSign className="w-5 h-5" />
             <h3 className="font-bold text-sm uppercase tracking-wider">Ventas de la Semana</h3>
           </div>
-          <p className="text-4xl font-black text-white">
+          <p className="text-3xl lg:text-4xl font-black text-white">
             {getDisplayPrice(salesMetrics.week)}
           </p>
         </div>
-        <div className="bg-gradient-to-br from-purple-950 to-slate-900 border border-purple-900/50 rounded-2xl p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)] flex flex-col justify-center relative overflow-hidden">
+        <div className="bg-gradient-to-br from-purple-950 to-slate-900 border border-purple-900/50 rounded-2xl p-4 md:p-6 shadow-[0_0_20px_rgba(168,85,247,0.1)] flex flex-col justify-center relative overflow-hidden">
           <div className="absolute -right-4 -bottom-4 opacity-5">
             <Trophy className="w-32 h-32" />
           </div>
@@ -119,7 +119,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
             <Trophy className="w-5 h-5" />
             <h3 className="font-bold text-sm uppercase tracking-wider">Ventas del Mes</h3>
           </div>
-          <p className="text-4xl font-black text-white relative z-10">
+          <p className="text-3xl lg:text-4xl font-black text-white relative z-10">
             {getDisplayPrice(salesMetrics.month)}
           </p>
         </div>
@@ -128,25 +128,25 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
       {/* Stats Cards (Inventario) */}
       <h2 className="text-lg font-bold text-slate-300 px-1 mt-8">Proyección de Inventario</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-xl flex flex-col justify-center">
           <div className="flex items-center gap-3 text-slate-400 mb-2">
             <Package className="w-5 h-5 text-emerald-400" />
             <h3 className="font-bold text-sm uppercase tracking-wider">Valor en Inventario</h3>
           </div>
-          <p className="text-3xl font-black text-white">
+          <p className="text-2xl lg:text-3xl font-black text-white">
             {getDisplayPrice(initialProducts.filter(p => p.isActive && !p.name.toLowerCase().includes('pase express')).reduce((acc, p) => acc + (p.price * p.stock), 0))}
           </p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-xl flex flex-col justify-center">
           <div className="flex items-center gap-3 text-slate-400 mb-2">
             <DollarSign className="w-5 h-5 text-cyan-400" />
             <h3 className="font-bold text-sm uppercase tracking-wider">Costo Estimado</h3>
           </div>
-          <p className="text-3xl font-black text-white">
+          <p className="text-2xl lg:text-3xl font-black text-white">
             {getDisplayPrice(initialProducts.filter(p => p.isActive && !p.name.toLowerCase().includes('pase express')).reduce((acc, p) => acc + ((p.costPrice || 0) * p.stock), 0))}
           </p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-center relative overflow-hidden">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-xl flex flex-col justify-center relative overflow-hidden">
           <div className="absolute -right-4 -bottom-4 opacity-5">
             <Trophy className="w-32 h-32" />
           </div>
@@ -154,7 +154,7 @@ export function InventoryManager({ initialProducts, posPlan, maxLimit, gymSlug =
             <TrendingUp className="w-5 h-5 text-purple-400" />
             <h3 className="font-bold text-sm uppercase tracking-wider">Ganancia Bruta (Proyectada)</h3>
           </div>
-          <p className="text-3xl font-black text-purple-400 relative z-10">
+          <p className="text-2xl lg:text-3xl font-black text-purple-400 relative z-10">
             {getDisplayPrice(initialProducts.filter(p => p.isActive && !p.name.toLowerCase().includes('pase express')).reduce((acc, p) => acc + ((p.price - (p.costPrice || p.price)) * p.stock), 0))}
           </p>
         </div>

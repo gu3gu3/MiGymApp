@@ -142,11 +142,11 @@ export default function GymQRClient({ gymName, gymUrl, gymLogoUrl }: GymQRClient
           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* QR Container Visual */}
-          <div className="z-10 bg-white p-12 rounded-3xl shadow-2xl mb-8 flex flex-col items-center gap-6">
-            <div ref={qrRef} className="bg-white p-4 rounded-xl border border-slate-100">
+          <div className="z-10 bg-white p-6 md:p-12 rounded-3xl shadow-2xl mb-8 flex flex-col items-center gap-6 w-full max-w-full overflow-hidden">
+            <div ref={qrRef} className="bg-white p-2 md:p-4 rounded-xl border border-slate-100 max-w-full w-full flex justify-center items-center">
               <QRCodeSVG 
                 value={gymUrl}
-                size={300}
+                style={{ width: '100%', height: 'auto', maxWidth: '300px' }}
                 level={"H"}
                 includeMargin={true}
                 imageSettings={(logoBase64 || gymLogoUrl) ? {

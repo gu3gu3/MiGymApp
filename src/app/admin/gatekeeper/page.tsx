@@ -217,7 +217,7 @@ export default function GatekeeperPage() {
         </button>
 
         {/* Escáner Activo */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex-1 max-h-[400px] relative">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex-1 max-h-[250px] md:max-h-[400px] relative">
           <div className="absolute inset-x-0 top-0 bg-slate-900/80 backdrop-blur-sm z-10 p-3 text-center border-b border-slate-800">
             <p className="text-sm font-semibold text-slate-300">Escáner Activo (Cámara o Pistola USB)</p>
           </div>
@@ -249,7 +249,7 @@ export default function GatekeeperPage() {
             {recentLogs.length === 0 ? (
               <p className="text-slate-600 text-sm text-center mt-10">Esperando check-ins...</p>
             ) : (
-              recentLogs.map((log) => (
+              recentLogs.slice(0, 5).map((log) => (
                 <div key={log.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-950 border border-slate-800">
                   <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-slate-800 border border-slate-700">
                     {log.photoUrl ? (
@@ -270,7 +270,7 @@ export default function GatekeeperPage() {
       </div>
 
       {/* Columna Derecha: Pantalla de Feedback Gigante */}
-      <div className="w-full lg:w-2/3 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-6 md:p-10 relative min-h-[300px] lg:min-h-0">
+      <div className="w-full lg:w-2/3 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-6 md:p-10 relative min-h-[400px] lg:min-h-0">
         {!lastScan ? (
           <div className="text-center opacity-30">
             <QrCode className="w-32 h-32 mx-auto mb-6 text-slate-500" />
