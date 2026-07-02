@@ -146,13 +146,14 @@ export default function GymQRClient({ gymName, gymUrl, gymLogoUrl }: GymQRClient
             <div ref={qrRef} className="bg-white p-2 md:p-4 rounded-xl border border-slate-100 max-w-full w-full flex justify-center items-center">
               <QRCodeSVG 
                 value={gymUrl}
+                size={300}
                 style={{ width: '100%', height: 'auto', maxWidth: '300px' }}
                 level={"H"}
                 includeMargin={true}
                 imageSettings={(logoBase64 || gymLogoUrl) ? {
                   src: logoBase64 || gymLogoUrl!,
-                  height: 70,
-                  width: 70,
+                  height: 60,
+                  width: 60,
                   excavate: true,
                 } : undefined}
               />
