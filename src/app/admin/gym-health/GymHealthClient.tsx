@@ -98,7 +98,7 @@ export default function GymHealthClient({ athletes, currency = 'USD', expressSal
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar relative pb-10">
+      <div className="flex-1 overflow-y-auto custom-scrollbar relative pb-10 pr-2 md:pr-4">
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

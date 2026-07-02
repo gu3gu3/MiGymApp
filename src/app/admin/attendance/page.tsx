@@ -106,9 +106,9 @@ export default function AttendancePage() {
             </div>
           ) : (
             filteredCheckIns.map(check => (
-              <div key={check.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-800/20 transition-colors">
-                <div className="col-span-1 flex justify-center">
-                  <div className="w-10 h-10 rounded-full border-2 border-slate-700 overflow-hidden bg-slate-800">
+              <div key={check.id} className="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-4 p-4 items-start sm:items-center hover:bg-slate-800/20 transition-colors">
+                <div className="sm:col-span-1 flex items-center justify-between w-full sm:w-auto sm:justify-center">
+                  <div className="w-10 h-10 rounded-xl border-2 border-slate-700 overflow-hidden bg-slate-800 flex-shrink-0">
                     {check.user.image ? (
                       <img src={check.user.image} alt={check.user.name} className="w-full h-full object-cover" />
                     ) : (
@@ -117,27 +117,39 @@ export default function AttendancePage() {
                       </div>
                     )}
                   </div>
+                  
+                  {/* On Mobile: Date is shown in the top right corner next to photo */}
+                  <div className="sm:hidden flex flex-col items-end">
+                    <span className="text-xs font-bold text-slate-300">
+                      {new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {check.isOfflineSync && (
+                     <span className="text-[10px] uppercase font-bold text-orange-400">
+                       Sync
+                     </span>
+                   )}
+                  </div>
                 </div>
                 
-                <div className="col-span-4">
+                <div className="sm:col-span-4 w-full">
                   <p className="font-bold text-white text-sm">{check.user.name}</p>
                   <p className="text-xs text-slate-500">{check.user.identityDocument || check.user.email}</p>
                 </div>
                 
-                <div className="col-span-3">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-900/30 text-cyan-400 border border-cyan-800">
+                <div className="sm:col-span-3">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-cyan-900/30 text-cyan-400 border border-cyan-800">
                     {check.planName}
                   </span>
                 </div>
                 
-                <div className="col-span-2 flex items-center justify-center gap-2">
+                <div className="hidden sm:col-span-2 sm:flex items-center justify-center gap-2">
                   <Clock className="w-4 h-4 text-slate-500" />
                   <span className="text-sm font-bold text-slate-300">
                     {new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
 
-                <div className="col-span-2 text-right">
+                <div className="hidden sm:block sm:col-span-2 text-right">
                    {check.isOfflineSync && (
                      <span className="text-[10px] uppercase font-bold text-orange-400 bg-orange-950/30 px-2 py-1 rounded-md border border-orange-900">
                        Sync Offline

@@ -251,7 +251,7 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
               <button 
                 key={item.id}
                 onClick={() => addToCart(item)}
-                className={`relative bg-slate-900 border-2 rounded-2xl p-6 text-center hover:bg-slate-800 transition-all active:scale-95 flex flex-col items-center justify-center min-h-[140px]
+                className={`relative bg-slate-900 border-2 rounded-2xl p-3 md:p-6 text-center hover:bg-slate-800 transition-all active:scale-95 flex flex-col items-center justify-center min-h-[100px] md:min-h-[140px]
                   ${isLowStock ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-slate-800 hover:border-slate-700'}`}
               >
                 {isLowStock && (
@@ -262,14 +262,14 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
                 )}
                 
                 {item.photoUrl ? (
-                  <img src={item.photoUrl} alt={item.name} className="w-12 h-12 object-cover rounded-full mb-3 border-2 border-slate-700" />
+                  <img src={item.photoUrl} alt={item.name} className="w-10 h-10 md:w-12 md:h-12 object-cover rounded-full mb-2 md:mb-3 border-2 border-slate-700" />
                 ) : (
-                  <span className="text-4xl mb-3">📦</span>
+                  <span className="text-3xl md:text-4xl mb-2 md:mb-3">📦</span>
                 )}
-                <p className="font-bold text-white text-sm leading-tight">{item.name}</p>
-                <div className="flex items-center justify-center gap-2 mt-2 w-full">
-                  <p className="text-orange-400 font-black">${item.price.toFixed(2)}</p>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isLowStock ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'}`}>
+                <p className="font-bold text-white text-[11px] md:text-sm leading-tight">{item.name}</p>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 mt-1 md:mt-2 w-full">
+                  <p className="text-orange-400 font-black text-xs md:text-base">${item.price.toFixed(2)}</p>
+                  <span className={`text-[9px] md:text-[10px] px-2 py-0.5 rounded-full font-bold ${isLowStock ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'}`}>
                     Stock: {item.stock}
                   </span>
                 </div>
@@ -280,7 +280,7 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
       </div>
 
       {/* Columna Derecha: Carrito y Checkout */}
-      <div className="w-full lg:w-2/5 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col h-full overflow-hidden">
+      <div className="w-full lg:w-2/5 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col h-[500px] lg:h-full overflow-hidden shrink-0">
         
         {/* Buscador de Cliente */}
         {posPlan !== 'KIOSKO' && (

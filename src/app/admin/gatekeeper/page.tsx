@@ -217,7 +217,7 @@ export default function GatekeeperPage() {
         </button>
 
         {/* Escáner Activo */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex-1 max-h-[250px] md:max-h-[400px] relative">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex-1 min-h-[250px] lg:min-h-0 max-h-[350px] lg:max-h-[400px] relative">
           <div className="absolute inset-x-0 top-0 bg-slate-900/80 backdrop-blur-sm z-10 p-3 text-center border-b border-slate-800">
             <p className="text-sm font-semibold text-slate-300">Escáner Activo (Cámara o Pistola USB)</p>
           </div>
