@@ -20,7 +20,10 @@ export async function authenticate(formData: FormData) {
     }
 
     return { url: '/admin' } // Assuming all gym admins go to /admin by default, the middleware will sort out SUPER_ADMIN vs GYM_ADMIN
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message?.includes("Cuenta bloqueada") || error?.cause?.err?.message?.includes("Cuenta bloqueada")) {
+      return { error: 'Tu cuenta está pendiente de activación por el Super Admin. Te contactaremos pronto.' }
+    }
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':

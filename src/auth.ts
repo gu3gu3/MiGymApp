@@ -20,7 +20,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string }
+          where: { email: credentials.email as string },
+          include: { managedGym: true }
         })
 
         if (!user || !user.password) {
@@ -33,6 +34,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         )
 
         if (!isValid) return null
+
+        if (user.role === 'GYM_ADMIN' && user.managedGym?.isLocked) {
+          throw new Error("Cuenta bloqueada. Esperando activación del administrador.")
+        }
 
         return {
           id: user.id,

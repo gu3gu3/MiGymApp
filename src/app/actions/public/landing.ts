@@ -40,7 +40,8 @@ export async function registerGymNode(data: FormData) {
         name: gymName,
         slug: gymName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
         address,
-        platformPlanId: freePlan?.id
+        platformPlanId: freePlan?.id,
+        isLocked: true // Nuevos gimnasios nacen bloqueados, pendientes de aprobación
       }
     })
 

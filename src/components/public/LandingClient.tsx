@@ -11,6 +11,7 @@ import Image from 'next/image'
 
 export function LandingClient({ competitions }: { competitions: any[] }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
   const router = useRouter()
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -22,9 +23,8 @@ export function LandingClient({ competitions }: { competitions: any[] }) {
     setIsSubmitting(false)
     
     if (res.success) {
-      toast.success('¡Gimnasio Registrado con Éxito!')
-      // Redirigir a gamification admin
-      router.push('/admin/gamification')
+      setIsSuccess(true)
+      // Remove router.push since they are locked by default
     } else {
       toast.error(res.error || 'Error al registrar')
     }
@@ -201,53 +201,73 @@ export function LandingClient({ competitions }: { competitions: any[] }) {
           </div>
 
           <div className="md:w-7/12 p-10 bg-slate-900">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-2xl font-bold text-white">Registro de Administrador</h3>
-              <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-3 py-1 rounded-full text-xs font-black uppercase shadow-[0_0_15px_rgba(16,185,129,0.2)]">100% Gratis</span>
-            </div>
-            <p className="text-slate-400 mb-8">Comienza Gratis (Hasta 25 Atletas). Escala cuando crezcas.</p>
-            
-            <form onSubmit={handleRegister} className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-slate-400 mb-1">Nombre Comercial del Gimnasio</label>
-                <input name="gymName" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Ej. Iron Forge Fitness" />
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-400 mb-1">Nombre Completo del Propietario</label>
-                  <input name="ownerName" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Ej. Juan Pérez" />
+            {isSuccess ? (
+              <div className="h-full flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-500">
+                <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-400" />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-400 mb-1">Teléfono (Propietario/Gym)</label>
-                  <input name="phone" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="+505 8888 8888" />
-                </div>
+                <h3 className="text-3xl font-black text-white mb-4">¡Gimnasio Registrado!</h3>
+                <p className="text-slate-400 mb-8 max-w-sm">
+                  Hemos recibido tu solicitud. Nuestro equipo verificará tus datos y te contactaremos a la brevedad para activar tu cuenta de administrador.
+                </p>
+                <Link 
+                  href="/login" 
+                  className="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-700"
+                >
+                  Ir al Inicio de Sesión
+                </Link>
               </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-2xl font-bold text-white">Registro de Administrador</h3>
+                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-3 py-1 rounded-full text-xs font-black uppercase shadow-[0_0_15px_rgba(16,185,129,0.2)]">100% Gratis</span>
+                </div>
+                <p className="text-slate-400 mb-8">Comienza Gratis (Hasta 25 Atletas). Escala cuando crezcas.</p>
+                
+                <form onSubmit={handleRegister} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-400 mb-1">Nombre Comercial del Gimnasio</label>
+                    <input name="gymName" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Ej. Iron Forge Fitness" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-400 mb-1">Nombre Completo del Propietario</label>
+                      <input name="ownerName" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Ej. Juan Pérez" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-400 mb-1">Teléfono (Propietario/Gym)</label>
+                      <input name="phone" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="+505 8888 8888" />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-400 mb-1">Correo (Admin)</label>
-                  <input name="email" type="email" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="admin@gym.com" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-400 mb-1">Contraseña</label>
-                  <input name="password" type="password" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="••••••••" />
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-400 mb-1">Correo (Admin)</label>
+                      <input name="email" type="email" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="admin@gym.com" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-400 mb-1">Contraseña</label>
+                      <input name="password" type="password" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="••••••••" />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-400 mb-1">Dirección / Sede principal</label>
-                <input name="address" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Managua, Nicaragua" />
-              </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-400 mb-1">Dirección / Sede principal</label>
+                    <input name="address" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Managua, Nicaragua" />
+                  </div>
 
-              <button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="w-full py-4 mt-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-black text-lg rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? 'Registrando...' : 'Comenzar Ahora Mismo'} <ArrowRight className="w-5 h-5" />
-              </button>
-            </form>
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full py-4 mt-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-black text-lg rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? 'Registrando...' : 'Comenzar Ahora Mismo'} <ArrowRight className="w-5 h-5" />
+                  </button>
+                </form>
+              </>
+            )}
           </div>
 
         </div>
