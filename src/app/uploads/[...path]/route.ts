@@ -3,10 +3,10 @@ import { join } from 'path'
 import { readFile } from 'fs/promises'
 import { existsSync } from 'fs'
 
-export async function GET(req: Request, props: { params: Promise<{ filename: string }> }) {
+export async function GET(req: Request, props: { params: Promise<{ path: string[] }> }) {
   try {
-    const { filename } = await props.params
-    const filepath = join(process.cwd(), 'public', 'uploads', filename)
+    const { path } = await props.params
+    const filepath = join(process.cwd(), 'public', 'uploads', ...path)
 
     if (!existsSync(filepath)) {
       return new NextResponse('File not found', { status: 404 })
@@ -16,6 +16,7 @@ export async function GET(req: Request, props: { params: Promise<{ filename: str
     
     // Determine content type
     let contentType = 'image/jpeg'
+    const filename = path[path.length - 1]
     if (filename.endsWith('.png')) contentType = 'image/png'
     else if (filename.endsWith('.gif')) contentType = 'image/gif'
     else if (filename.endsWith('.webp')) contentType = 'image/webp'
