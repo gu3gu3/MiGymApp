@@ -8,6 +8,7 @@ import {
   UserCheck, Trophy, Users, Settings, Shield, Menu, X
 } from 'lucide-react'
 import { SignOutButton } from '@/components/auth/SignOutButton'
+import Image from 'next/image'
 
 type UserData = {
   name?: string | null
@@ -38,9 +39,9 @@ export function AdminSidebar({
       {/* Mobile Top Bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-40 shadow-lg">
         <div className="flex items-center gap-3">
-          <Activity className="w-6 h-6 text-cyan-400" />
-          <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
-            ADMIN
+          <Image src="/icon-192x192.png" alt="MiGymApp" width={32} height={32} className="object-contain" />
+          <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 text-xl tracking-tight">
+            MiGymApp
           </span>
         </div>
         <button 
@@ -65,9 +66,9 @@ export function AdminSidebar({
       >
         <div className="p-6 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 flex items-center gap-2">
-              <Activity className="w-6 h-6 text-cyan-400" />
-              ADMIN
+            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 flex items-center gap-2 tracking-tight">
+              <Image src="/icon-192x192.png" alt="MiGymApp" width={28} height={28} className="object-contain" />
+              MiGymApp
             </h2>
             <p className="text-xs text-slate-500 mt-1 uppercase font-semibold tracking-wider">{gymName}</p>
           </div>
