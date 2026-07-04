@@ -6,7 +6,7 @@ export const WalletService = {
       where: { userId },
       include: {
         gym: { select: { name: true, logoUrl: true, bannerUrl: true, teamColor: true } },
-        plan: { select: { name: true } }
+        plan: { select: { name: true, type: true, totalCredits: true } }
       }
     });
 
@@ -17,6 +17,11 @@ export const WalletService = {
       gymBanner: sub.gym.bannerUrl || null,
       status: sub.status,
       planName: sub.plan.name,
+      planType: sub.plan.type,
+      startDate: sub.startDate,
+      endDate: sub.endDate,
+      remainingTotal: sub.remainingTotal,
+      totalCredits: sub.plan.totalCredits,
       offlineToken: sub.offlineToken,
       themeColor: sub.gym.teamColor || "from-slate-900 to-slate-800"
     }));

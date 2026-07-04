@@ -15,16 +15,34 @@ type ProductData = {
   photoUrl: string | null
 }
 
+type PlanData = {
+  id: string
+  name: string
+  price: number
+  type: string
+  durationDays: number | null
+  totalCredits: number | null
+}
+
 type CartItem = {
   id: string
   name: string
   price: number
   qty: number
+  itemType: 'PRODUCT' | 'PLAN'
+}
+type AthleteData = {
+  id: string
+  name: string
+  identityDocument: string | null
 }
 
-export function PosManager({ initialProducts, posPlan, role }: { initialProducts: ProductData[], posPlan: string, role?: string }) {
+export function PosManager({ initialProducts, initialPlans = [], athletes = [], posPlan, role, currency = 'NIO' }: { initialProducts: ProductData[], initialPlans?: PlanData[], athletes?: AthleteData[], posPlan: string, role?: string, currency?: string }) {
   const [activeTab, setActiveTab] = useState<'POS' | 'HISTORY'>('POS')
+  const [catalogTab, setCatalogTab] = useState<'PRODUCTS' | 'PLANS'>('PRODUCTS')
   const [cart, setCart] = useState<CartItem[]>([])
+  
+  const currSymbol = currency === 'NIO' ? 'C$' : '$'
   const [customer, setCustomer] = useState('')
   const [search, setSearch] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -64,13 +82,13 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
     }
   }, [activeTab, selectedMonth])
 
-  const addToCart = (product: ProductData) => {
+  const addToCart = (item: ProductData | PlanData, itemType: 'PRODUCT' | 'PLAN') => {
     setCart(prev => {
-      const existing = prev.find(item => item.id === product.id)
+      const existing = prev.find(i => i.id === item.id)
       if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item)
+        return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i)
       }
-      return [...prev, { id: product.id, name: product.name, price: product.price, qty: 1 }]
+      return [...prev, { id: item.id, name: item.name, price: item.price, qty: 1, itemType }]
     })
   }
 
@@ -82,6 +100,11 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
 
   const handleCheckout = async (method: string) => {
     if (cart.length === 0) return toast.error('El carrito está vacío')
+    
+    const hasPlan = cart.some(item => item.itemType === 'PLAN')
+    if (hasPlan && !customer) {
+      return toast.error('Debes asociar la venta a un atleta para renovar/vender un plan.')
+    }
     
     startTransition(async () => {
       const result = await processSale(cart, method, customer)
@@ -133,7 +156,7 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col justify-center">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ingreso del Mes</h3>
-              <p className="text-3xl font-black text-emerald-400">${metrics.totalRevenue.toFixed(2)}</p>
+              <p className="text-3xl font-black text-emerald-400">{currSymbol}{metrics.totalRevenue.toFixed(2)}</p>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col justify-center">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Transacciones</h3>
@@ -141,7 +164,7 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col justify-center">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ticket Promedio</h3>
-              <p className="text-3xl font-black text-purple-400">${metrics.averageTicket.toFixed(2)}</p>
+              <p className="text-3xl font-black text-purple-400">{currSymbol}{metrics.averageTicket.toFixed(2)}</p>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col justify-center">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Top 5 Estrellas</h3>
@@ -184,10 +207,10 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
                         {sale.user ? sale.user.name : 'Venta General'}
                       </td>
                       <td className="p-4 text-sm text-slate-400">
-                        {sale.items.map((i: any) => `${i.quantity}x ${i.product.name}`).join(', ')}
+                        {sale.items.map((i: any) => `${i.quantity}x ${i.product?.name || i.plan?.name}`).join(', ')}
                       </td>
                       <td className="p-4 font-black text-emerald-400">
-                        ${Number(sale.total).toFixed(2)}
+                        {currSymbol}{Number(sale.total).toFixed(2)}
                       </td>
                     </tr>
                   ))
@@ -234,23 +257,39 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
                   type="text" 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar producto..." 
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-orange-500"
+                  placeholder="Buscar..." 
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
             )}
           </div>
         </div>
 
+        {/* Sub-Tabs: Planes vs Productos */}
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+          <button 
+            onClick={() => setCatalogTab('PRODUCTS')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${catalogTab === 'PRODUCTS' ? 'bg-cyan-900/50 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            Productos Físicos
+          </button>
+          <button 
+            onClick={() => setCatalogTab('PLANS')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${catalogTab === 'PLANS' ? 'bg-emerald-900/50 text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            Membresías / Planes
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto custom-scrollbar pr-2 pb-10">
-          {initialProducts
+          {catalogTab === 'PRODUCTS' && initialProducts
             .filter(item => posPlan === 'KIOSKO' || item.name.toLowerCase().includes(search.toLowerCase()))
             .map(item => {
             const isLowStock = posPlan !== 'KIOSKO' && item.stock <= item.minStock
             return (
               <button 
                 key={item.id}
-                onClick={() => addToCart(item)}
+                onClick={() => addToCart(item, 'PRODUCT')}
                 className={`relative bg-slate-900 border-2 rounded-2xl p-3 md:p-6 text-center hover:bg-slate-800 transition-all active:scale-95 flex flex-col items-center justify-center min-h-[100px] md:min-h-[140px]
                   ${isLowStock ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-slate-800 hover:border-slate-700'}`}
               >
@@ -268,7 +307,7 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
                 )}
                 <p className="font-bold text-white text-[11px] md:text-sm leading-tight">{item.name}</p>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 mt-1 md:mt-2 w-full">
-                  <p className="text-orange-400 font-black text-xs md:text-base">${item.price.toFixed(2)}</p>
+                  <p className="text-orange-400 font-black text-xs md:text-base">{currSymbol}{item.price.toFixed(2)}</p>
                   <span className={`text-[9px] md:text-[10px] px-2 py-0.5 rounded-full font-bold ${isLowStock ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'}`}>
                     Stock: {item.stock}
                   </span>
@@ -276,6 +315,25 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
               </button>
             )
           })}
+          
+          {catalogTab === 'PLANS' && initialPlans
+            .filter(plan => plan.name.toLowerCase().includes(search.toLowerCase()))
+            .map(plan => (
+              <button 
+                key={plan.id}
+                onClick={() => addToCart(plan, 'PLAN')}
+                className="relative bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-emerald-500/30 rounded-2xl p-3 md:p-6 text-center hover:border-emerald-500/60 transition-all active:scale-95 flex flex-col items-center justify-center min-h-[100px] md:min-h-[140px] shadow-[0_0_15px_rgba(16,185,129,0.05)] hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]"
+              >
+                <span className="text-3xl md:text-4xl mb-2 md:mb-3">🎟️</span>
+                <p className="font-bold text-white text-[11px] md:text-sm leading-tight">{plan.name}</p>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 mt-1 md:mt-2 w-full">
+                  <p className="text-emerald-400 font-black text-xs md:text-base">{currSymbol}{plan.price.toFixed(2)}</p>
+                  <span className="text-[9px] md:text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-400">
+                    {plan.type === 'TIME_BASED' ? `${plan.durationDays} Días` : `${plan.totalCredits} Pases`}
+                  </span>
+                </div>
+              </button>
+            ))}
         </div>
       </div>
 
@@ -293,9 +351,15 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
                   type="text" 
                   value={customer}
                   onChange={e => setCustomer(e.target.value)}
-                  placeholder="Nombre o DNI del Atleta..." 
+                  list="athletes-list"
+                  placeholder="ID del Atleta..." 
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-cyan-500"
                 />
+                <datalist id="athletes-list">
+                  {athletes.map(a => (
+                    <option key={a.id} value={a.id}>{a.name} {a.identityDocument ? `(${a.identityDocument})` : ''}</option>
+                  ))}
+                </datalist>
               </div>
               <button className="bg-cyan-950/50 border border-cyan-500/30 text-cyan-400 p-3 rounded-lg hover:bg-cyan-900/50 transition-colors">
                 <QrCode className="w-6 h-6" />
@@ -316,10 +380,10 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
               <div key={item.id} className="flex justify-between items-center p-3 bg-slate-950 rounded-xl border border-slate-800">
                 <div className="flex-1">
                   <p className="font-bold text-white">{item.name}</p>
-                  <p className="text-sm text-slate-400">${item.price.toFixed(2)} x {item.qty}</p>
+                  <p className="text-sm text-slate-400">{currSymbol}{item.price.toFixed(2)} x {item.qty}</p>
                 </div>
                 <div className="text-right flex items-center gap-4">
-                  <p className="font-black text-orange-400">${(item.price * item.qty).toFixed(2)}</p>
+                  <p className="font-black text-orange-400">{currSymbol}{(item.price * item.qty).toFixed(2)}</p>
                   <button onClick={() => removeFromCart(item.id)} className="text-slate-500 hover:text-red-400 px-2 text-xl font-bold">&times;</button>
                 </div>
               </div>
@@ -331,7 +395,7 @@ export function PosManager({ initialProducts, posPlan, role }: { initialProducts
         <div className="p-6 border-t border-slate-800 bg-slate-950">
           <div className="flex justify-between items-end mb-6">
             <span className="text-slate-400 font-bold uppercase tracking-wider">Total a Cobrar</span>
-            <span className="text-4xl font-black text-white">${total.toFixed(2)}</span>
+            <span className="text-4xl font-black text-white">{currSymbol}{total.toFixed(2)}</span>
           </div>
 
           <div className="space-y-3">

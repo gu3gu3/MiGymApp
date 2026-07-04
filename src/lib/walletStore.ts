@@ -5,6 +5,11 @@ export interface MockSubscription {
   gymBanner?: string | null
   status: 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'FROZEN' | 'CANCELED' | string
   planName: string
+  planType?: 'TIME_BASED' | 'CREDIT_BASED'
+  startDate?: Date
+  endDate?: Date | null
+  remainingTotal?: number | null
+  totalCredits?: number | null
   offlineToken: string // Simula el JWT guardado
   themeColor: string
 }

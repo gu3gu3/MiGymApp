@@ -13,6 +13,28 @@ interface SubscriptionCardProps {
 export function SubscriptionCard({ subscription, onGenerateQR }: SubscriptionCardProps) {
   const isActive = subscription.status === 'ACTIVE'
 
+  let progressLabel = ''
+  let progressPercentage = 0
+
+  if (isActive) {
+    if (subscription.planType === 'TIME_BASED' && subscription.endDate && subscription.startDate) {
+      const totalMs = new Date(subscription.endDate).getTime() - new Date(subscription.startDate).getTime()
+      const remainingMs = new Date(subscription.endDate).getTime() - new Date().getTime()
+      const totalDays = Math.round(totalMs / (1000 * 60 * 60 * 24))
+      const daysLeft = Math.round(remainingMs / (1000 * 60 * 60 * 24))
+      
+      if (totalDays > 0) {
+        progressPercentage = Math.max(0, Math.min(100, (daysLeft / totalDays) * 100))
+      }
+      progressLabel = `${Math.max(0, daysLeft)} días restantes`
+    } else if (subscription.planType === 'CREDIT_BASED' && subscription.totalCredits) {
+      const remaining = subscription.remainingTotal || 0
+      const total = subscription.totalCredits
+      progressPercentage = Math.max(0, Math.min(100, (remaining / total) * 100))
+      progressLabel = `${remaining} de ${total} pases`
+    }
+  }
+
   return (
     <motion.div 
       whileTap={{ scale: 0.98 }}
@@ -52,16 +74,42 @@ export function SubscriptionCard({ subscription, onGenerateQR }: SubscriptionCar
       </div>
 
       {/* Body / Estado */}
-      <div className="relative z-10 mt-8 mb-6">
-        <div className={cn(
-          "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide backdrop-blur-md border shadow-sm",
-          isActive 
-            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-            : "bg-red-500/20 text-red-300 border-red-500/30"
-        )}>
-          {isActive ? <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" /> : <AlertCircle className="w-3.5 h-3.5" />}
-          {isActive ? 'SUSCRIPCIÓN ACTIVA' : 'SUSCRIPCIÓN EXPIRADA'}
+      <div className="relative z-10 mt-8 mb-6 flex flex-col gap-4">
+        <div className="flex items-center">
+          <div className={cn(
+            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide backdrop-blur-md border shadow-sm",
+            isActive 
+              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+              : "bg-red-500/20 text-red-300 border-red-500/30"
+          )}>
+            {isActive ? <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" /> : <AlertCircle className="w-3.5 h-3.5" />}
+            {isActive ? 'SUSCRIPCIÓN ACTIVA' : 'SUSCRIPCIÓN EXPIRADA'}
+          </div>
         </div>
+
+        {isActive && progressLabel && (
+          <div className="flex flex-col gap-2 bg-black/20 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
+            <div className="flex justify-between items-end">
+              <span className="text-white/60 text-xs font-bold uppercase tracking-wider">Progreso</span>
+              <span className="text-white font-black text-sm">{progressLabel}</span>
+            </div>
+            {/* Barra de progreso */}
+            <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner relative">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercentage}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className={cn(
+                  "h-full rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)] relative",
+                  progressPercentage > 20 ? "bg-white" : "bg-red-400 shadow-[0_0_10px_rgba(248,113,113,0.8)]"
+                )}
+              >
+                {/* Brillo sobre la barra */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full opacity-50" />
+              </motion.div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Acción Principal */}

@@ -16,17 +16,45 @@ export default async function PosPage() {
 
   const gym = await prisma.gym.findUnique({
     where: { id: user.gymId },
-    select: { posPlan: true }
+    select: { posPlan: true, currency: true }
   })
   
   const posPlan = gym?.posPlan || 'KIOSKO'
+  const currency = gym?.currency || 'NIO'
   const products = await getProducts(user.gymId, true)
+  const plans = await prisma.plan.findMany({
+    where: { gymId: user.gymId, isActive: true },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      type: true,
+      durationDays: true,
+      totalCredits: true
+    }
+  })
+
+  // Convert Decimal to number for the client
+  const formattedPlans = plans.map(p => ({
+    ...p,
+    price: Number(p.price)
+  }))
+
+  const athletes = await prisma.user.findMany({
+    where: {
+      subscriptions: { some: { gymId: user.gymId } }
+    },
+    select: { id: true, name: true, identityDocument: true }
+  })
 
   return (
     <PosManager 
-      initialProducts={products} 
+      initialProducts={products}
+      initialPlans={formattedPlans}
+      athletes={athletes}
       posPlan={posPlan}
       role={user.role}
+      currency={currency}
     />
   )
 }
