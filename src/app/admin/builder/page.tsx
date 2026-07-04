@@ -20,11 +20,39 @@ type Plan = {
 
 export default function PlanBuilderPage() {
   const [planType, setPlanType] = useState<PlanType>('TIME_BASED')
-  const [isRestricted, setIsRestricted] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [plans, setPlans] = useState<Plan[]>([])
   const [currency, setCurrency] = useState('NIO')
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false)
+
+  // Edit State
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null)
+  const [formData, setFormData] = useState({
+    name: '',
+    price: '',
+    durationDays: '',
+    totalCredits: ''
+  })
+
+  const resetForm = () => {
+    setEditingPlanId(null)
+    setPlanType('TIME_BASED')
+    setCurrency('NIO')
+    setFormData({ name: '', price: '', durationDays: '', totalCredits: '' })
+  }
+
+  const handleEdit = (plan: Plan) => {
+    setEditingPlanId(plan.id)
+    setPlanType(plan.type as PlanType)
+    setCurrency(plan.currency)
+    setFormData({
+      name: plan.name,
+      price: plan.price.toString(),
+      durationDays: plan.durationDays ? plan.durationDays.toString() : '',
+      totalCredits: plan.totalCredits ? plan.totalCredits.toString() : ''
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const loadPlans = async () => {
     const data = await getGymPlans()
@@ -39,22 +67,30 @@ export default function PlanBuilderPage() {
     e.preventDefault()
     setIsSaving(true)
     try {
-      const formData = new FormData(e.currentTarget)
-      formData.append('type', planType)
-      formData.append('currency', currency)
+      const data = new FormData(e.currentTarget)
+      data.append('type', planType)
+      data.append('currency', currency)
       
-      const res = await createPlanAction(formData)
+      const { createPlanAction, updatePlanAction } = await import('@/app/actions/plans/create-plan')
+      
+      let res
+      if (editingPlanId) {
+        res = await updatePlanAction(editingPlanId, data)
+      } else {
+        res = await createPlanAction(data)
+      }
+
       if (res.success) {
-        toast.success('¡Plan creado exitosamente!')
-        // Hacemos reload completo para asegurar estado limpio y evitar duplicados si hay retrasos de red
-        window.location.reload()
+        toast.success(editingPlanId ? '¡Plan actualizado!' : '¡Plan creado exitosamente!')
+        resetForm()
+        loadPlans()
       } else {
         toast.error(res.error || 'Error al guardar')
-        setIsSaving(false)
       }
     } catch (err) {
-      toast.error('Error de red, pero el plan pudo haberse guardado. Recargando...')
-      setTimeout(() => window.location.reload(), 2000)
+      toast.error('Error de red al guardar')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -80,6 +116,8 @@ export default function PlanBuilderPage() {
                   <input 
                     type="text" 
                     name="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
                     placeholder="Ej. Pase Mensual VIP, 10 Clases de Crossfit..." 
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
                     required
@@ -95,6 +133,8 @@ export default function PlanBuilderPage() {
                         type="number" 
                         step="0.01"
                         name="price"
+                        value={formData.price}
+                        onChange={(e) => setFormData({...formData, price: e.target.value})}
                         placeholder="0.00" 
                         className={`w-full bg-slate-950 border border-slate-700 rounded-lg pr-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors ${currency === 'NIO' ? 'pl-10' : 'pl-8'}`}
                         required
@@ -174,6 +214,8 @@ export default function PlanBuilderPage() {
                     <input 
                       type="number" 
                       name="durationDays"
+                      value={formData.durationDays}
+                      onChange={(e) => setFormData({...formData, durationDays: e.target.value})}
                       placeholder="Ej. 30 para un mes" 
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
                       required
@@ -186,6 +228,8 @@ export default function PlanBuilderPage() {
                       <input 
                         type="number" 
                         name="totalCredits"
+                        value={formData.totalCredits}
+                        onChange={(e) => setFormData({...formData, totalCredits: e.target.value})}
                         placeholder="Ej. 10 pases" 
                         className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                         required
@@ -196,6 +240,8 @@ export default function PlanBuilderPage() {
                       <input 
                         type="number" 
                         name="durationDays"
+                        value={formData.durationDays}
+                        onChange={(e) => setFormData({...formData, durationDays: e.target.value})}
                         placeholder="Ej. 60 días" 
                         className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                         required
@@ -208,12 +254,21 @@ export default function PlanBuilderPage() {
 
             {/* Acciones */}
             <div className="flex justify-end gap-4 pt-4 pb-10">
+              {editingPlanId && (
+                <button 
+                  type="button" 
+                  onClick={resetForm}
+                  className="px-6 py-3 border border-slate-700 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-colors w-full md:w-auto"
+                >
+                  Cancelar
+                </button>
+              )}
               <button 
                 type="submit" 
                 disabled={isSaving}
                 className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-emerald-400 text-white font-black rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg shadow-cyan-500/20 disabled:opacity-50 w-full md:w-auto justify-center"
               >
-                {isSaving ? 'Guardando...' : <><Save className="w-5 h-5" /> Guardar Plan</>}
+                {isSaving ? 'Guardando...' : <><Save className="w-5 h-5" /> {editingPlanId ? 'Actualizar Plan' : 'Guardar Plan'}</>}
               </button>
             </div>
           </form>
@@ -247,43 +302,71 @@ export default function PlanBuilderPage() {
                       <span className={`font-black ${plan.isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
                         {plan.currency === 'NIO' ? 'C$' : '$'}{plan.price.toFixed(2)}
                       </span>
-                      {plan.isActive && (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const { disablePlanAction } = await import('@/app/actions/plans/create-plan')
-                            const toastId = toast.loading('Deshabilitando...')
-                            const res = await disablePlanAction(plan.id)
-                            if (res.success) {
-                              toast.success('Plan deshabilitado', { id: toastId })
-                              loadPlans()
-                            } else {
-                              toast.error(res.error || 'Error', { id: toastId, duration: 6000 })
-                            }
-                          }}
-                          className="block mt-2 text-[10px] uppercase font-bold text-red-400 hover:text-red-300 transition-colors ml-auto"
-                        >
-                          Deshabilitar
-                        </button>
-                      )}
-                      {!plan.isActive && (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const { enablePlanAction } = await import('@/app/actions/plans/create-plan')
-                            const toastId = toast.loading('Habilitando...')
-                            const res = await enablePlanAction(plan.id)
-                            if (res.success) {
-                              toast.success('Plan habilitado', { id: toastId })
-                              loadPlans()
-                            } else {
-                              toast.error(res.error || 'Error', { id: toastId, duration: 6000 })
-                            }
-                          }}
-                          className="block mt-2 text-[10px] uppercase font-bold text-emerald-400 hover:text-emerald-300 transition-colors ml-auto"
-                        >
-                          Habilitar
-                        </button>
+                      {plan.isActive ? (
+                        <div className="flex gap-3 justify-end mt-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(plan)}
+                            className="text-[10px] uppercase font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const { disablePlanAction } = await import('@/app/actions/plans/create-plan')
+                              const toastId = toast.loading('Deshabilitando...')
+                              const res = await disablePlanAction(plan.id)
+                              if (res.success) {
+                                toast.success('Plan deshabilitado', { id: toastId })
+                                loadPlans()
+                              } else {
+                                toast.error(res.error || 'Error', { id: toastId, duration: 6000 })
+                              }
+                            }}
+                            className="text-[10px] uppercase font-bold text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            Deshabilitar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-3 justify-end mt-2">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const { enablePlanAction } = await import('@/app/actions/plans/create-plan')
+                              const toastId = toast.loading('Habilitando...')
+                              const res = await enablePlanAction(plan.id)
+                              if (res.success) {
+                                toast.success('Plan habilitado', { id: toastId })
+                                loadPlans()
+                              } else {
+                                toast.error(res.error || 'Error', { id: toastId, duration: 6000 })
+                              }
+                            }}
+                            className="text-[10px] uppercase font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+                          >
+                            Habilitar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!confirm('¿Estás seguro de eliminar este plan permanentemente?')) return
+                              const { deletePlanAction } = await import('@/app/actions/plans/create-plan')
+                              const toastId = toast.loading('Eliminando...')
+                              const res = await deletePlanAction(plan.id)
+                              if (res.success) {
+                                toast.success('Plan eliminado', { id: toastId })
+                                loadPlans()
+                              } else {
+                                toast.error(res.error || 'Error', { id: toastId, duration: 6000 })
+                              }
+                            }}
+                            className="text-[10px] uppercase font-bold text-red-600 hover:text-red-500 transition-colors"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

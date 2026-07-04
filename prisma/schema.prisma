@@ -175,6 +175,7 @@ model Plan {
 
   gym           Gym            @relation(fields: [gymId], references: [id])
   subscriptions Subscription[]
+  saleItems     SaleItem[]
 }
 
 enum PlanType {
@@ -219,13 +220,15 @@ enum SaleType {
 model SaleItem {
   id        String  @id @default(uuid())
   saleId    String
-  productId String
+  productId String?
+  planId    String? // Añadido para poder vender membresías en el POS
   quantity  Int
   price     Decimal @db.Decimal(10, 2) // Precio histórico al momento de la venta
   isClaimed Boolean @default(false) // True cuando escanean el QR de entrega del batido/proteína
 
   sale    Sale    @relation(fields: [saleId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+  plan    Plan?    @relation(fields: [planId], references: [id])
 }
 
 // ==========================================

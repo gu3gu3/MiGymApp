@@ -9,31 +9,36 @@ export async function getExpressPassProduct() {
     const gymId = (session?.user as any)?.gymId
     if (!gymId) return null
 
-    let product = await prisma.product.findFirst({
-      where: { gymId, name: 'Pase Express (1 Día)' }
+    // Look for a Plan that represents a Day Pass instead of a Physical Product
+    let plan = await prisma.plan.findFirst({
+      where: { 
+        gymId, 
+        OR: [
+          { name: { contains: 'Pase del Dia', mode: 'insensitive' } },
+          { name: { contains: 'Express', mode: 'insensitive' } }
+        ]
+      }
     })
 
-    if (!product) {
-      product = await prisma.product.create({
+    // Fallback if they haven't created the plan yet
+    if (!plan) {
+      plan = await prisma.plan.create({
         data: {
           gymId,
-          name: 'Pase Express (1 Día)',
-          price: 150,
-          stock: 99999, // Stock infinito
+          name: 'Pase del Día',
+          price: 50,
+          type: 'CREDIT_BASED',
+          totalCredits: 1
         }
       })
     }
 
     return {
-      id: product.id,
-      gymId: product.gymId,
-      name: product.name,
-      price: Number(product.price),
-      costPrice: product.costPrice ? Number(product.costPrice) : null,
-      stock: product.stock,
-      minStock: product.minStock,
-      photoUrl: product.photoUrl,
-      isActive: product.isActive
+      id: plan.id,
+      gymId: plan.gymId,
+      name: plan.name,
+      price: Number(plan.price),
+      isActive: plan.isActive
     }
   } catch (error) {
     return null
@@ -51,23 +56,30 @@ export async function createExpressGuestPass(data: { name?: string }) {
 
     const { name } = data
 
-    // Asegurar que existe un producto genérico de Pase Express para este gimnasio
-    let passProduct = await prisma.product.findFirst({
-      where: { gymId, name: 'Pase Express (1 Día)' }
+    // Asegurar que existe un plan de Pase Express
+    let passPlan = await prisma.plan.findFirst({
+      where: { 
+        gymId, 
+        OR: [
+          { name: { contains: 'Pase del Dia', mode: 'insensitive' } },
+          { name: { contains: 'Express', mode: 'insensitive' } }
+        ]
+      }
     })
 
-    if (!passProduct) {
-      passProduct = await prisma.product.create({
+    if (!passPlan) {
+      passPlan = await prisma.plan.create({
         data: {
           gymId,
-          name: 'Pase Express (1 Día)',
-          price: 150,
-          stock: 99999, // Stock infinito
+          name: 'Pase del Día',
+          price: 50,
+          type: 'CREDIT_BASED',
+          totalCredits: 1
         }
       })
     }
     
-    const actualPrice = Number(passProduct.price)
+    const actualPrice = Number(passPlan.price)
 
     // Ejecutar transacción: Venta + CheckIn
     const result = await prisma.$transaction(async (tx) => {
@@ -79,7 +91,7 @@ export async function createExpressGuestPass(data: { name?: string }) {
           type: 'POS_PHYSICAL',
           items: {
             create: {
-              productId: passProduct.id,
+              planId: passPlan!.id,
               quantity: 1,
               price: actualPrice,
             }

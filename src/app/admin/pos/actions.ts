@@ -3,8 +3,9 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { revalidatePath } from 'next/cache'
+import crypto from 'crypto'
 
-export async function processSale(cart: { id: string, price: number, qty: number }[], method: string, customerId?: string) {
+export async function processSale(cart: { id: string, price: number, qty: number, itemType?: 'PRODUCT' | 'PLAN' }[], method: string, customerId?: string) {
   try {
     const session = await auth()
     const gymId = (session?.user as any)?.gymId
@@ -25,27 +26,85 @@ export async function processSale(cart: { id: string, price: number, qty: number
         }
       })
 
-      // 2. Create Sale Items and update Stock
+      // 2. Create Sale Items and update Stock / Subscriptions
       for (const item of cart) {
-        // Decrease stock
-        const product = await tx.product.update({
-          where: { id: item.id },
-          data: { stock: { decrement: item.qty } }
-        })
+        if (item.itemType === 'PLAN') {
+          // This is a Plan Renewal/Sale
+          const plan = await tx.plan.findUnique({ where: { id: item.id } })
+          if (!plan) throw new Error(`El plan con ID ${item.id} no existe`)
+          if (!customerId) throw new Error(`Debes asignar un cliente para renovar el plan ${plan.name}`)
 
-        if (product.stock < 0) {
-          throw new Error(`Stock insuficiente para ${product.name}`)
-        }
+          // Find existing subscription or create new
+          const existingSub = await tx.subscription.findFirst({
+            where: { userId: customerId, gymId, planId: item.id }
+          })
 
-        // Create SaleItem
-        await tx.saleItem.create({
-          data: {
-            saleId: sale.id,
-            productId: item.id,
-            quantity: item.qty,
-            price: item.price
+          let newEndDate = existingSub?.endDate || new Date()
+          // If the plan is time-based, add days
+          if (plan.type === 'TIME_BASED' && plan.durationDays) {
+            if (newEndDate < new Date()) newEndDate = new Date() // If expired, start from today
+            newEndDate.setDate(newEndDate.getDate() + (plan.durationDays * item.qty))
           }
-        })
+
+          let newCredits = existingSub?.remainingTotal || 0
+          if (plan.type === 'CREDIT_BASED' && plan.totalCredits) {
+            newCredits += (plan.totalCredits * item.qty)
+          }
+
+          if (existingSub) {
+            await tx.subscription.update({
+              where: { id: existingSub.id },
+              data: {
+                status: 'ACTIVE',
+                endDate: plan.type === 'TIME_BASED' ? newEndDate : existingSub.endDate,
+                remainingTotal: plan.type === 'CREDIT_BASED' ? newCredits : existingSub.remainingTotal
+              }
+            })
+          } else {
+            await tx.subscription.create({
+              data: {
+                userId: customerId,
+                gymId,
+                planId: item.id,
+                status: 'ACTIVE',
+                startDate: new Date(),
+                endDate: plan.type === 'TIME_BASED' ? newEndDate : null,
+                remainingTotal: plan.type === 'CREDIT_BASED' ? newCredits : null,
+                offlineToken: crypto.randomBytes(32).toString('hex')
+              }
+            })
+          }
+
+          // Create SaleItem for the plan
+          await tx.saleItem.create({
+            data: {
+              saleId: sale.id,
+              planId: item.id,
+              quantity: item.qty,
+              price: item.price
+            }
+          })
+        } else {
+          // It's a Physical Product
+          const product = await tx.product.update({
+            where: { id: item.id },
+            data: { stock: { decrement: item.qty } }
+          })
+
+          if (product.stock < 0) {
+            throw new Error(`Stock insuficiente para ${product.name}`)
+          }
+
+          // Create SaleItem
+          await tx.saleItem.create({
+            data: {
+              saleId: sale.id,
+              productId: item.id,
+              quantity: item.qty,
+              price: item.price
+            }
+          })
+        }
       }
     })
 
@@ -80,7 +139,10 @@ export async function getSalesHistory(year: number, month: number) {
       include: {
         user: { select: { name: true, email: true } },
         items: {
-          include: { product: { select: { name: true } } }
+          include: { 
+            product: { select: { name: true } },
+            plan: { select: { name: true } }
+          }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -92,11 +154,13 @@ export async function getSalesHistory(year: number, month: number) {
     const averageTicket = totalTransactions > 0 ? totalRevenue / totalTransactions : 0
 
     // Compute top products
+    // Compute top products / plans
     const productCounts: Record<string, number> = {}
     sales.forEach(sale => {
       sale.items.forEach(item => {
-        if (item.product?.name) {
-          productCounts[item.product.name] = (productCounts[item.product.name] || 0) + item.quantity
+        const itemName = item.product?.name || item.plan?.name
+        if (itemName) {
+          productCounts[itemName] = (productCounts[itemName] || 0) + item.quantity
         }
       })
     })
